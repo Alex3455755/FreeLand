@@ -12,7 +12,8 @@ class ProjectController extends Controller
      */
     public function index()
     {
-        //
+        $projects = Project::latest()->get();
+        return response()->json($projects);
     }
 
     /**
@@ -28,7 +29,22 @@ class ProjectController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $project = new Project([
+            "title" => $request['title'],
+            "description" => $request['description'],
+            "budget" => $request['budget'],
+            "deadline" => $request['deadline'],
+            "status" => 'open',
+            "freelancer_id" => null,
+            "category_id" => $request['category_id'],
+            "customer_id" => $request['customer_id'],
+        ]);
+        $project->save();
+
+         return response()->json([
+            'success' => true,
+            'message' => 'проект успешно создан'
+        ]);
     }
 
     /**
@@ -50,9 +66,14 @@ class ProjectController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Project $project)
+    public function update(Request $request)
     {
-        //
+         Project::find($request->id)->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'проект успешно обновлен'
+        ]);
     }
 
     /**
@@ -60,6 +81,10 @@ class ProjectController extends Controller
      */
     public function destroy(Project $project)
     {
-        //
+        $project->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'проект удален'
+        ]);
     }
 }

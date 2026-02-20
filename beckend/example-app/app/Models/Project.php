@@ -16,6 +16,7 @@ class Project extends Model
         'deadline',
         'status',
         'category_id',
+        'freelancer_id',
         'customer_id',
     ];
 
@@ -33,6 +34,10 @@ class Project extends Model
     public function customer()
     {
         return $this->belongsTo(User::class, 'customer_id');
+    }
+        public function frelancer()
+    {
+        return $this->belongsTo(User::class, 'freelancer_id');
     }
 
     public function comments()

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->date('deadline');
             $table->enum('status', ['open', 'in_progress', 'completed'])->default('open');
             
+            $table->foreignId('frelancer_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
             $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
             

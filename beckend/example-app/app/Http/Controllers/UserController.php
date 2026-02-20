@@ -12,8 +12,10 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $users = User::latest()->get();
+        return response()->json($users);
     }
+
 
     /**
      * Show the form for creating a new resource.
