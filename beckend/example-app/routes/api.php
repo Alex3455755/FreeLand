@@ -22,6 +22,7 @@ Route::get('/users',[UserController::class,'index']);
 Route::get('/projects',[ProjectController::class,'index']);
 Route::post('/projects/add',[ProjectController::class,'store']);
 Route::post('/projects/edit',[ProjectController::class,'update']);
+Route::get('/projects/{project}',[ProjectController::class,'show']);
 Route::get('projects/destroy/{project}',[ProjectController::class,'destroy']);
 
 //Categories

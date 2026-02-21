@@ -16,6 +16,7 @@ class RegisterController extends Controller
             'full_name' => request('full_name'),
             'phone' => request('phone'),
             'login' => request('login'),
+            'avatar' => request('avatar'),
             'password' => Hash::make(request('password')),
             'role' => request('role') == 'фрилансер' ? 'freelancer' : 'customer',
             'balance' => 0.00,
