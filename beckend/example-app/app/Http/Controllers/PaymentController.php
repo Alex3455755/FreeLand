@@ -12,7 +12,8 @@ class PaymentController extends Controller
      */
     public function index()
     {
-        //
+        $payments = Payment::latest()->get();
+        return response()->json($payments);
     }
 
     /**
@@ -28,7 +29,20 @@ class PaymentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $cat = new Payment([
+            "amount" => $request['amount'],
+            "commission" => $request['commission'],
+            "status" => $request['status'],
+            "type" => $request['type'],
+            "project_id" => $request['project_id'],
+            "freelancer_id" => $request['freelancer_id'],
+        ]);
+        $cat->save();
+
+         return response()->json([
+            'success' => true,
+            'message' => 'Платеж успешно создан'
+        ]);
     }
 
     /**
@@ -50,9 +64,14 @@ class PaymentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Payment $payment)
+    public function update(Request $request)
     {
-        //
+        Payment::find($request->id)->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Отзыв успешно обновлен'
+        ]);
     }
 
     /**
@@ -60,6 +79,10 @@ class PaymentController extends Controller
      */
     public function destroy(Payment $payment)
     {
-        //
+         $payment->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Отзыв удален'
+        ]);
     }
 }

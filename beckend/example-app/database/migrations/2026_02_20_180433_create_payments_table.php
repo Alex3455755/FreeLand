@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->decimal('amount', 10, 2);
             $table->decimal('commission', 10, 2)->default(0.00);
+            $table->enum('type',['transfer','input','output']);
             $table->enum('status', ['frozen', 'paid', 'refunded'])->default('frozen');
             
             $table->foreignId('project_id')->constrained()->onDelete('cascade');

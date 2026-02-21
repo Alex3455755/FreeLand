@@ -13,6 +13,7 @@ class Payment extends Model
         'amount',
         'commission',
         'status',
+        'type',
         'project_id',
         'freelancer_id',
     ];

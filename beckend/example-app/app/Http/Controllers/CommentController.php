@@ -29,13 +29,13 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
-        $cat = new Comment([
+        $com = new Comment([
             "text" => $request['text'],
             "rating" => $request['rating'],
             "project_id" => $request['project_id'],
             "user_id" => $request['user_id'],
         ]);
-        $cat->save();
+        $com->save();
 
          return response()->json([
             'success' => true,

@@ -8,6 +8,7 @@ use App\Http\COntrollers\RegisterController;
 use App\Http\COntrollers\LoginController;
 use App\Http\COntrollers\CategoryController;
 use App\Http\COntrollers\CommentController;
+use App\Http\COntrollers\PaymentController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -33,7 +34,13 @@ Route::get('categories/destroy/{categries}',[CategoryController::class,'destroy'
 Route::get('/comments',[CommentController::class,'index']);
 Route::post('/comments/add',[CommentController::class,'store']);
 Route::post('/comments/edit',[CommentController::class,'update']);
-Route::get('comments/destroy/{categries}',[CommentController::class,'destroy']);
+Route::get('comments/destroy/{comment}',[CommentController::class,'destroy']);
+
+//Payments
+Route::get('/payments',[PaymentController::class,'index']);
+Route::post('/payments/add',[PaymentController::class,'store']);
+Route::post('/payments/edit',[PaymentController::class,'update']);
+Route::get('payments/destroy/{payment}',[PaymentController::class,'destroy']);
 
 
 //Авторизация
