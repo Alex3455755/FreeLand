@@ -12,7 +12,8 @@ class CommentController extends Controller
      */
     public function index()
     {
-        //
+        $comments = Comment::latest()->get();
+        return response()->json($comments);
     }
 
     /**
@@ -28,7 +29,18 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $cat = new Comment([
+            "text" => $request['text'],
+            "rating" => $request['rating'],
+            "project_id" => $request['project_id'],
+            "user_id" => $request['user_id'],
+        ]);
+        $cat->save();
+
+         return response()->json([
+            'success' => true,
+            'message' => 'Отзыв успешно создан'
+        ]);
     }
 
     /**
@@ -50,9 +62,14 @@ class CommentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Comment $comment)
+    public function update(Request $request)
     {
-        //
+        Comment::find($request->id)->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Отзыв успешно обновлен'
+        ]);
     }
 
     /**
@@ -60,6 +77,10 @@ class CommentController extends Controller
      */
     public function destroy(Comment $comment)
     {
-        //
+        $comment->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Отзыв удален'
+        ]);
     }
 }

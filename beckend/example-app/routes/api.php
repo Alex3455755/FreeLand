@@ -7,6 +7,7 @@ use App\Http\COntrollers\ProjectController;
 use App\Http\COntrollers\RegisterController;
 use App\Http\COntrollers\LoginController;
 use App\Http\COntrollers\CategoryController;
+use App\Http\COntrollers\CommentController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -27,6 +28,13 @@ Route::get('/categories',[CategoryController::class,'index']);
 Route::post('/categories/add',[CategoryController::class,'store']);
 Route::post('/categories/edit',[CategoryController::class,'update']);
 Route::get('categories/destroy/{categries}',[CategoryController::class,'destroy']);
+
+//Comments
+Route::get('/comments',[CommentController::class,'index']);
+Route::post('/comments/add',[CommentController::class,'store']);
+Route::post('/comments/edit',[CommentController::class,'update']);
+Route::get('comments/destroy/{categries}',[CommentController::class,'destroy']);
+
 
 //Авторизация
 Route::post('/login',[LoginController::class,'login']);
