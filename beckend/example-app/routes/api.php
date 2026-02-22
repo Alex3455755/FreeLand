@@ -9,6 +9,7 @@ use App\Http\COntrollers\LoginController;
 use App\Http\COntrollers\CategoryController;
 use App\Http\COntrollers\CommentController;
 use App\Http\COntrollers\PaymentController;
+use App\Http\COntrollers\MessageController;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
@@ -42,6 +43,13 @@ Route::get('/payments',[PaymentController::class,'index']);
 Route::post('/payments/add',[PaymentController::class,'store']);
 Route::post('/payments/edit',[PaymentController::class,'update']);
 Route::get('payments/destroy/{payment}',[PaymentController::class,'destroy']);
+
+//Messages
+Route::get('/messages',[MessageController::class,'index']);
+Route::post('/messages/add',[MessageController::class,'store']);
+Route::post('/messages/edit',[MessageController::class,'update']);
+Route::get('messages/destroy/{payment}',[MessageController::class,'destroy']);
+
 
 
 //Авторизация
