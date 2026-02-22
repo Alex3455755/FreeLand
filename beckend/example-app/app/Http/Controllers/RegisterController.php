@@ -30,10 +30,5 @@ class RegisterController extends Controller
             'success' => true,
             'message' => 'Регистрация успешна'
         ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Ошибка регистрации'
-        ], 400);
     }
 }

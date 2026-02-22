@@ -16,6 +16,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
+//Авторизация
+Route::post('/login',[LoginController::class,'login']);
+//Регистрация
+Route::post('/registred',[RegisterController::class,'registred']);
+
 //Users
 Route::get('/users',[UserController::class,'index']);
 
@@ -49,12 +54,3 @@ Route::get('/messages',[MessageController::class,'index']);
 Route::post('/messages/add',[MessageController::class,'store']);
 Route::post('/messages/edit',[MessageController::class,'update']);
 Route::get('messages/destroy/{payment}',[MessageController::class,'destroy']);
-
-
-
-//Авторизация
-Route::post('/login',[LoginController::class,'login']);
-
-
-//Регистрация
-Route::post('/registred',[RegisterController::class,'registred']);

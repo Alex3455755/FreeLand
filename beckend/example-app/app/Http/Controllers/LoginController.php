@@ -1,37 +1,75 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 
 class LoginController extends Controller
 {
+    /**
+     * Показать форму входа (для SPA не нужен)
+     */
+    public function index()
+    {
+        return view('auth.login');
+    }
 
+    /**
+     * Вход пользователя
+     */
     public function login(Request $request)
     {
-        try {
-            $success = auth()->attempt([
-                'login' => request('login'),
-                'password' => request('password')
-            ], request()->has('remember'));
+        $request->validate([
+            'login' => 'required|string',
+            'password' => 'required|string',
+        ]);
 
-            if ($success) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Вход успешен'
-                ]);
-            }
+        $credentials = $request->only('login', 'password');
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Неверный логин или пароль'
-            ], 401);
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
             
-        } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Ошибка авторизации'
-            ], 400);
+                'success' => true,
+                'message' => 'Авторизация успешна',
+                'user' => Auth::user()
+            ]);
         }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Неверный логин или пароль'
+        ], 401);
+    }
+
+    /**
+     * Выход пользователя
+     */
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Выход выполнен'
+        ]);
+    }
+
+    /**
+     * Проверка статуса авторизации
+     */
+    public function check(Request $request)
+    {
+        return response()->json([
+            'authenticated' => Auth::check(),
+            'user' => Auth::check() ? Auth::user() : null
+        ]);
     }
 }
