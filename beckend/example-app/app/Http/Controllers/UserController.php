@@ -63,9 +63,14 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request)
     {
-        //
+         User::find($request->id)->update($request->all());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'пользователь успешно обновлен'
+        ]);
     }
 
     /**
@@ -73,6 +78,10 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        $user->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'пользователь удален'
+        ]);
     }
 }

@@ -60,9 +60,10 @@
                   <th>ID</th>
                   <th>Имя</th>
                   <th>Логин</th>
-                  <th>Email</th>
                   <th>Телефон</th>
-                  <th>Аватар</th>
+                  <th>Роль</th>
+                  <th>Баланс</th>
+                  <th>Рейтинг</th>
                   <th>Действия</th>
                 </tr>
               </thead>
@@ -71,9 +72,10 @@
                   <td>{{ user.id }}</td>
                   <td>{{ user.full_name || '—' }}</td>
                   <td>{{ user.login }}</td>
-                  <td>{{ user.email || '—' }}</td>
                   <td>{{ user.phone || '—' }}</td>
-                  <td>{{ user.avatar || '—' }}</td>
+                  <td>{{ user.role || '—' }}</td>
+                  <td>{{ user.balance || '—' }}</td>
+                  <td>{{ user.rating || '—' }}</td>
                   <td class="actions">
                     <button class="action-btn edit" @click="openUserModal(user)">
                       <span class="action-icon">✏️</span>
@@ -182,10 +184,6 @@
         <div v-if="activeTab === 'comments'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Управление комментариями</h2>
-            <button class="add-button ios-glass" @click="openCommentModal()">
-              <span class="button-icon">➕</span>
-              Добавить комментарий
-            </button>
           </div>
 
           <div class="table-container ios-glass">
@@ -195,6 +193,7 @@
                   <th>ID</th>
                   <th>Автор</th>
                   <th>Проект</th>
+                  <th>Рейтинг</th>
                   <th>Комментарий</th>
                   <th>Действия</th>
                 </tr>
@@ -202,8 +201,9 @@
               <tbody>
                 <tr v-for="comment in comments" :key="comment.id">
                   <td>{{ comment.id }}</td>
-                  <td>{{ getUserName(comment.author_id) }}</td>
+                  <td>{{ getUserName(comment.user_id) }}</td>
                   <td>{{ getProjectTitle(comment.project_id) }}</td>
+                  <td>{{ comment.rating }}</td>
                   <td>{{ truncateText(comment.text, 50) }}</td>
                   <td class="actions">
                     <button class="action-btn edit" @click="openCommentModal(comment)">
@@ -223,10 +223,6 @@
         <div v-if="activeTab === 'payments'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Управление платежами</h2>
-            <button class="add-button ios-glass" @click="openPaymentModal()">
-              <span class="button-icon">➕</span>
-              Добавить платеж
-            </button>
           </div>
 
           <div class="table-container ios-glass">
@@ -236,6 +232,7 @@
                   <th>ID</th>
                   <th>Отправитель</th>
                   <th>Получатель</th>
+                  <th>Коммиссия</th>
                   <th>Сумма</th>
                   <th>Статус</th>
                   <th>Действия</th>
@@ -244,8 +241,9 @@
               <tbody>
                 <tr v-for="payment in payments" :key="payment.id">
                   <td>{{ payment.id }}</td>
-                  <td>{{ getUserName(payment.sender_id) }}</td>
-                  <td>{{ getUserName(payment.receiver_id) }}</td>
+                  <td>{{ getUserName(payment.customer_id) }}</td>
+                  <td>{{ getUserName(payment.freelancer_id) }}</td>
+                  <td>{{ payment.commission }}</td>
                   <td>{{ formatBudget(payment.amount) }}</td>
                   <td>
                     <span class="status-badge" :class="payment.status">
@@ -257,47 +255,6 @@
                       <span class="action-icon">✏️</span>
                     </button>
                     <button class="action-btn delete" @click="confirmDelete('payments', payment.id, `Платеж #${payment.id}`)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Сообщения -->
-        <div v-if="activeTab === 'messages'" class="admin-section">
-          <div class="section-header">
-            <h2 class="section-title">Управление сообщениями</h2>
-            <button class="add-button ios-glass" @click="openMessageModal()">
-              <span class="button-icon">➕</span>
-              Добавить сообщение
-            </button>
-          </div>
-
-          <div class="table-container ios-glass">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Отправитель</th>
-                  <th>Получатель</th>
-                  <th>Сообщение</th>
-                  <th>Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="message in messages" :key="message.id">
-                  <td>{{ message.id }}</td>
-                  <td>{{ getUserName(message.sender_id) }}</td>
-                  <td>{{ getUserName(message.receiver_id) }}</td>
-                  <td>{{ truncateText(message.text, 50) }}</td>
-                  <td class="actions">
-                    <button class="action-btn edit" @click="openMessageModal(message)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('messages', message.id, `Сообщение #${message.id}`)">
                       <span class="action-icon">🗑️</span>
                     </button>
                   </td>
@@ -330,17 +287,23 @@
                 <label>Логин</label>
                 <input v-model="modalData.login" type="text" class="form-input ios-glass" required>
               </div>
-              <div class="form-group">
-                <label>Роль</label>
-                <input v-model="modalData.role" type="text" class="form-input ios-glass">
-              </div>
+              <label>Роль</label>
+              <select v-model="modalData.status" class="form-input ios-glass">
+                  <option value="admin">Админ</option>
+                  <option value="customer">Клиент</option>
+                  <option value="freelancer">Фрилансер</option>
+                </select>
               <div class="form-group">
                 <label>Телефон</label>
                 <input v-model="modalData.phone" type="tel" class="form-input ios-glass">
               </div>
               <div class="form-group">
-                <label>Аватар</label>
-                <input v-model="modalData.avatar" type="text" class="form-input ios-glass">
+                <label>Баланс</label>
+                <input v-model="modalData.balance" type="number" class="form-input ios-glass">
+              </div>
+              <div class="form-group">
+                <label>Рейтинг</label>
+                <input v-model="modalData.rating" type="number" class="form-input ios-glass">
               </div>
             </template>
 
@@ -402,7 +365,7 @@
             <template v-if="modalType === 'comment'">
               <div class="form-group">
                 <label>Автор</label>
-                <select v-model="modalData.author_id" class="form-input ios-glass" required>
+                <select v-model="modalData.user_id" class="form-input ios-glass" required>
                   <option value="">Выберите автора</option>
                   <option v-for="user in users" :key="user.id" :value="user.id">
                     {{ user.full_name || user.login }} (ID: {{ user.id }})
@@ -421,6 +384,10 @@
               <div class="form-group">
                 <label>Текст комментария</label>
                 <textarea v-model="modalData.text" class="form-input ios-glass" rows="3" required></textarea>
+              </div>
+              <div class="form-group">
+                <label>Рейтинг</label>
+                <input v-model="modalData.rating" type="number" min="1" max="5" class="form-input ios-glass">
               </div>
             </template>
 
@@ -449,11 +416,15 @@
                 <input v-model.number="modalData.amount" type="number" class="form-input ios-glass" required>
               </div>
               <div class="form-group">
+                <label>Коммиссия</label>
+                <input v-model.number="modalData.commission" type="number" class="form-input ios-glass" required>
+              </div>
+              <div class="form-group">
                 <label>Статус</label>
                 <select v-model="modalData.status" class="form-input ios-glass">
-                  <option value="pending">Ожидает</option>
-                  <option value="completed">Завершен</option>
-                  <option value="failed">Ошибка</option>
+                  <option value="frozen">Заморожен</option>
+                  <option value="paid">Оплачен</option>
+                  <option value="refunded">Отменен</option>
                 </select>
               </div>
             </template>
@@ -526,14 +497,10 @@ export default {
       modalType: null,
       modalData: {},
       isEditing: false,
-      
-      // Удаление
       showDeleteConfirm: false,
       deleteItemType: null,
       deleteItemId: null,
       deleteItemName: '',
-      
-      // 👇 ИЗМЕНЕНО: новый базовый URL
       apiBaseUrl: '',
       loading: true
     }
@@ -580,6 +547,7 @@ export default {
     async fetchUsers() {
       const response = await fetch(`${this.apiBaseUrl}/api/users`);
       const data = await response.json();
+      console.log(data);
       this.users = data;
     },
     
@@ -615,10 +583,10 @@ export default {
         full_name: '',
         login: '',
         phone: '',
-        avatar: '',
-        role: '',
-        rating: '',
+        role: null,
         balance: '',
+        rating: '',
+
       };
       this.showModal = true;
     },
@@ -654,6 +622,7 @@ export default {
       this.modalData = comment ? { ...comment } : {
         user_id: null,
         project_id: null,
+        rating: null,
         text: ''
       };
       this.showModal = true;
@@ -704,6 +673,7 @@ export default {
           },
           body: JSON.stringify(this.modalData)
         });
+        console.log(this.modalData);
         
         if (!response.ok) {
           throw new Error('Ошибка сохранения');
@@ -843,6 +813,13 @@ export default {
 </script>
 
 <style scoped>
+
+.avatar-preview {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 /* Все стили остаются точно такими же */
 .projects-page {
   min-height: 100vh;

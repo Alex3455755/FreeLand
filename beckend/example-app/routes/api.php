@@ -40,6 +40,8 @@ Route::post('/registred',[RegisterController::class,'registred']);
 //Users
 Route::get('/users',[UserController::class,'index']);
 Route::get('/users/{id}',[UserController::class,'show']);
+Route::post('/users/edit',[UserController::class,'update']);
+Route::get('/users/destroy/{user}',[UserController::class,'destroy']);
 
 //Projects
 Route::get('/projects',[ProjectController::class,'index']);
