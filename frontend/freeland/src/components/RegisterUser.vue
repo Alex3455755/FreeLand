@@ -85,7 +85,7 @@ const handleRegister = async () => {
     credentials: 'include'
   })
   console.log(form);
-  const response = await fetch(`http://localhost:8000/api/registred`, {
+  const response = await fetch(`/api/registred`, {
     method: 'POST',
     credentials: 'include',
     headers: {

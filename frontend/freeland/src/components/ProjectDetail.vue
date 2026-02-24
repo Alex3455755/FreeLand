@@ -156,7 +156,7 @@ export default {
       customerLoading: false,
       freelancerLoading: false,
       loading: true,
-      apiBaseUrl: 'http://127.0.0.1:8000'
+      apiBaseUrl: ''
     }
   },
   

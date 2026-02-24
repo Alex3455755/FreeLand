@@ -200,7 +200,7 @@ export default {
       searchQuery: '',
       selectedCategory: '',
       sortBy: 'rating_desc',
-      apiBaseUrl: 'http://127.0.0.1:8000'
+      apiBaseUrl: ''
     }
   },
   

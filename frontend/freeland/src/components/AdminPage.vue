@@ -534,7 +534,7 @@ export default {
       deleteItemName: '',
       
       // 👇 ИЗМЕНЕНО: новый базовый URL
-      apiBaseUrl: 'http://127.0.0.1:8000',
+      apiBaseUrl: '',
       loading: true
     }
   },
