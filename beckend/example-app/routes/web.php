@@ -6,4 +6,3 @@ use App\Http\Controllers\CloutheController;
 use App\Http\Controllers\BrandController;
 
 
-

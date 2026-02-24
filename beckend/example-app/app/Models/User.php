@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory,HasApiTokens, Notifiable;
 
     protected $fillable = [
         'full_name',
@@ -20,6 +21,11 @@ class User extends Authenticatable
         'balance',
         'rating',
     ];
+
+    public function getAuthIdentifierName()
+    {
+        return 'login'; // Используем поле login вместо email
+    }
 
     protected $hidden = [
         'password',

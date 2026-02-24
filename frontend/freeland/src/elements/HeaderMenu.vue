@@ -7,30 +7,53 @@
         </div>
         
         <div class="nav-menu">
-          <router-link to="/"  class="nav-link active">Главная</router-link>
-          <router-link to="/freelancer" class="nav-link">Фрилансеры</router-link>
-          <router-link to="/projects" class="nav-link">Заказы</router-link>
-          <a href="#" class="nav-link">О нас</a>
-          <a href="#" class="nav-link">Контакты</a>
+          <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">Главная</router-link>
+          <router-link to="/freelancer" class="nav-link" :class="{ active: $route.path === '/freelancer' }">Фрилансеры</router-link>
+          <router-link to="/projects" class="nav-link" :class="{ active: $route.path === '/projects' }">Заказы</router-link>
+          
+          <!-- Админ панель только для админов -->
+          <router-link v-if="user?.role === 'admin'" to="/admin" class="nav-link" :class="{ active: $route.path.startsWith('/admin') }">
+            Админ панель
+          </router-link>
         </div>
         
-        <div class="nav-actions" v-if="!loading">
+        <!-- Показываем loader -->
+        <div v-if="loading" class="nav-actions">
+          <div class="loader-sm"></div>
+        </div>
 
-  <!-- Если НЕ авторизован -->
-  <template v-if="!user">
-    <router-link class="nav-button login" to="/login">Войти</router-link>
-    <router-link class="nav-button register ios-glass" to="/register">Регистрация</router-link>
-  </template>
+        <!-- НЕ авторизован -->
+        <div v-else-if="!user" class="nav-actions">
+          <router-link class="nav-button login" to="/login">Войти</router-link>
+          <router-link class="nav-button register ios-glass" to="/register">Регистрация</router-link>
+        </div>
 
-  <!-- Если авторизован -->
-  <template v-else>
-    <span class="user-name">{{ user.name }}</span>
-    <button class="nav-button login" @click="logout">Выйти</button>
-  </template>
-
-</div>
+        <!-- АВТОРИЗОВАН -->
+        <div v-else class="nav-actions">
+          <!-- Аватар/имя пользователя -->
+          <div class="user-info">
+            <img 
+              v-if="user.avatar" 
+              :src="user.avatar" 
+              :alt="user.full_name" 
+              class="user-avatar"
+            />
+            <span v-else class="user-avatar-placeholder">
+              {{ getInitials(user.full_name) }}
+            </span>
+            <span class="user-name">{{ user.full_name || user.login }}</span>
+          </div>
+          
+          <!-- Роль (не для админа) -->
+          <span v-if="user.role !== 'admin'" class="user-role">
+            {{ getRoleText(user.role) }}
+          </span>
+          
+          <!-- Кнопка выхода -->
+          <button class="nav-button logout" @click="logout">Выйти</button>
+        </div>
         
-        <button class="mobile-menu-toggle">
+        <button class="mobile-menu-toggle" @click="toggleMobileMenu">
           <span class="bar"></span>
           <span class="bar"></span>
           <span class="bar"></span>
@@ -42,25 +65,45 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
 
 const user = ref(null)
 const loading = ref(true)
-
-const API_URL = 'http://localhost:8000'
+const API_URL = '/api'
 
 // Получить текущего пользователя
 const fetchUser = async () => {
+  const token = localStorage.getItem('token')
+  
+  if (!token) {
+    user.value = null
+    loading.value = false
+    return
+  }
+
   try {
-    const response = await fetch(`${API_URL}/api/user`, {
-      credentials: 'include'
+    const response = await fetch(`${API_URL}/user`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     })
 
-    if (response.ok) {
-      user.value = await response.json()
+    const data = await response.json()
+    
+    if (response.ok && data.success) {
+      user.value = data.user
     } else {
+      // Токен невалидный
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
       user.value = null
     }
   } catch (error) {
+    console.error('Ошибка получения пользователя:', error)
     user.value = null
   } finally {
     loading.value = false
@@ -69,23 +112,47 @@ const fetchUser = async () => {
 
 // Логаут
 const logout = async () => {
-  await fetch(`${API_URL}/logout`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-TOKEN': getCookie('XSRF-TOKEN')
+  const token = localStorage.getItem('token')
+  
+  try {
+    if (token) {
+      await fetch(`${API_URL}/logout`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
+      })
     }
-  })
-
-  user.value = null
+  } catch (error) {
+    console.error('Ошибка выхода:', error)
+  } finally {
+    // Очищаем данные
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    user.value = null
+    
+    await router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
+  }
 }
 
-// Получение CSRF токена из cookie
-const getCookie = (name) => {
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop().split(';').shift()
+const getInitials = (name) => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+const getRoleText = (role) => {
+  const roles = {
+    'freelancer': 'Фрилансер',
+    'customer': 'Заказчик',
+    'admin': 'Админ'
+  }
+  return roles[role] || role
 }
 
 onMounted(() => {
@@ -94,11 +161,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Header & Navigation */
 .header {
   padding: 20px 0;
-  position: relative;
-  z-index: 30;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  backdrop-filter: blur(20px);
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .navbar {
@@ -106,76 +182,163 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 16px 32px;
-  position: relative;
+  min-height: 70px;
 }
 
 .logo-text {
   font-size: 1.8rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #FFFFFF;
   letter-spacing: 1px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
 .nav-menu {
   display: flex;
   gap: 32px;
+  align-items: center;
 }
 
 .nav-link {
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.8);
   text-decoration: none;
   font-size: 1.1rem;
   font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  transition: color 0.3s ease;
+  padding: 12px 20px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .nav-link:hover {
-  color: var(--text-primary);
+  color: #FFFFFF;
+  background: rgba(255,255,255,0.1);
+  transform: translateY(-1px);
 }
 
 .nav-link.active {
-  color: var(--text-primary);
-  background: rgba(168, 209, 255, 0.1);
+  color: #FFFFFF;
+  background: rgba(168, 209, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(168, 209, 255, 0.3);
 }
 
 .nav-actions {
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  align-items: center;
 }
 
 .nav-button {
-  padding: 10px 24px;
+  padding: 12px 28px;
   border: none;
   border-radius: 9999px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  color: var(--text-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
 }
 
 .nav-button.login {
   background: transparent;
-  border: 1px solid rgba(168, 209, 255, 0.3);
-  color: var(--text-secondary);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.9);
 }
 
 .nav-button.login:hover {
-  background: rgba(168, 209, 255, 0.1);
-  border-color: rgba(168, 209, 255, 0.5);
-  color: var(--text-primary);
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.5);
+  transform: translateY(-1px);
 }
 
 .nav-button.register {
-  background: rgba(10, 77, 140, 0.4);
-  border: 1px solid rgba(168, 209, 255, 0.3);
+  background: rgba(10, 77, 140, 0.6);
+  border: 1px solid rgba(168, 209, 255, 0.4);
+  color: #FFFFFF;
+  backdrop-filter: blur(10px);
 }
 
 .nav-button.register:hover {
-  background: rgba(10, 77, 140, 0.6);
-  border-color: rgba(168, 209, 255, 0.5);
+  background: rgba(10, 77, 140, 0.8);
+  border-color: rgba(168, 209, 255, 0.6);
+  transform: translateY(-1px);
+}
+
+.nav-button.logout {
+  background: rgba(255, 107, 107, 0.2);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  color: #FFB3B3;
+}
+
+.nav-button.logout:hover {
+  background: rgba(255, 107, 107, 0.4);
+  border-color: rgba(255, 107, 107, 0.6);
+  color: #FFFFFF;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.user-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(168, 209, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.user-name {
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.95rem;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  background: rgba(10, 77, 140, 0.3);
+  color: rgba(255,255,255,0.9);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+}
+
+.loader-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .mobile-menu-toggle {
@@ -191,21 +354,32 @@ onMounted(() => {
 .bar {
   width: 30px;
   height: 3px;
-  background: var(--text-primary);
+  background: #FFFFFF;
   border-radius: 3px;
   transition: all 0.3s ease;
 }
 
-/* Responsive */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  .nav-menu {
+    gap: 20px;
+  }
+  
+  .nav-link {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .navbar {
     padding: 12px 20px;
   }
 
-  .nav-menu {
-    display: none;
-  }
-
+  .nav-menu,
   .nav-actions {
     display: none;
   }

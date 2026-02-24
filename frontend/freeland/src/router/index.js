@@ -8,6 +8,7 @@ import ProjectPage from '@/components/ProjectPage.vue'
 import ProjectDetail from '@/components/ProjectDetail.vue'
 import FreelancersPage from '@/components/FreelancersPage.vue'
 import UserDetail from '@/components/UserDetail.vue'
+import AdminPage from '@/components/AdminPage.vue'
 
 const routes = [
     { path: '/', component: HomePage },
@@ -33,6 +34,10 @@ const routes = [
     path: '/users/:id',
     name: 'user-detail-alt',
     component: UserDetail
+  },
+  {
+    path: '/admin',
+    component: AdminPage
   }
 ]
 

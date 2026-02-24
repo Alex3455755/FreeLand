@@ -9,19 +9,31 @@ use App\Http\COntrollers\LoginController;
 use App\Http\COntrollers\CategoryController;
 use App\Http\COntrollers\CommentController;
 use App\Http\COntrollers\PaymentController;
+use App\Http\COntrollers\AuthController;
 use App\Http\COntrollers\MessageController;
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+
 
 Route::options('/{any}', function() {
     return response()->json([], 200);
 })->where('any', '.*');
 
+Route::get('/test', function() {
+    return response()->json(['message' => 'API работает']);
+});
+
 
 //Авторизация
-Route::post('/login',[LoginController::class,'login']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', [AuthController::class, 'user']);
+    
+    Route::post('/logout', function (Request $request) {
+        $request->user()->currentAccessToken()->delete();
+        return response()->json(['success' => true]);
+    });
+});
+Route::post('/login', [LoginController::class, 'login'])
+    ->middleware([\Illuminate\Session\Middleware\StartSession::class]);
 //Регистрация
 Route::post('/registred',[RegisterController::class,'registred']);
 
@@ -40,22 +52,22 @@ Route::get('projects/destroy/{project}',[ProjectController::class,'destroy']);
 Route::get('/categories',[CategoryController::class,'index']);
 Route::post('/categories/add',[CategoryController::class,'store']);
 Route::post('/categories/edit',[CategoryController::class,'update']);
-Route::get('categories/destroy/{categries}',[CategoryController::class,'destroy']);
+Route::get('/categories/destroy/{categries}',[CategoryController::class,'destroy']);
 
 //Comments
 Route::get('/comments',[CommentController::class,'index']);
 Route::post('/comments/add',[CommentController::class,'store']);
 Route::post('/comments/edit',[CommentController::class,'update']);
-Route::get('comments/destroy/{comment}',[CommentController::class,'destroy']);
+Route::get('/comments/destroy/{comment}',[CommentController::class,'destroy']);
 
 //Payments
 Route::get('/payments',[PaymentController::class,'index']);
 Route::post('/payments/add',[PaymentController::class,'store']);
 Route::post('/payments/edit',[PaymentController::class,'update']);
-Route::get('payments/destroy/{payment}',[PaymentController::class,'destroy']);
+Route::get('/payments/destroy/{payment}',[PaymentController::class,'destroy']);
 
 //Messages
 Route::get('/messages',[MessageController::class,'index']);
 Route::post('/messages/add',[MessageController::class,'store']);
 Route::post('/messages/edit',[MessageController::class,'update']);
-Route::get('messages/destroy/{payment}',[MessageController::class,'destroy']);
+Route::get('/messages/destroy/{payment}',[MessageController::class,'destroy']);

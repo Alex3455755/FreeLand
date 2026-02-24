@@ -15,7 +15,7 @@ return new class extends Migration
             $table->enum('type',['transfer','input','output']);
             $table->enum('status', ['frozen', 'paid', 'refunded'])->default('frozen');
             
-            $table->foreignId('project_id')->constrained()->onDelete('cascade');
+            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('freelancer_id')->constrained('users')->onDelete('cascade');
             
             $table->timestamps();

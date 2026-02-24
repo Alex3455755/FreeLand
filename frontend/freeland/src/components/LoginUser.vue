@@ -46,7 +46,7 @@
         </div>
 
         <!-- Запомнить меня -->
-        <div class="form-options">
+        <div class="form-group">
           <label class="checkbox-label">
             <input 
               type="checkbox" 
@@ -55,9 +55,6 @@
             />
             <span class="checkbox-text">Запомнить меня</span>
           </label>
-          <router-link to="/forgot-password" class="forgot-link" v-if="false">
-            Забыли пароль?
-          </router-link>
         </div>
 
         <!-- Сообщение об ошибке -->
@@ -88,10 +85,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
+
+const API_BASE_URL = '/api'
 
 const form = reactive({
   login: '',
@@ -108,39 +108,12 @@ const errors = reactive({
   password: ''
 })
 
-const validateField = (field) => {
-  switch (field) {
-    case 'login':
-      if (!form.login) {
-        errors.login = 'Логин обязателен'
-      } else if (form.login.length < 3) {
-        errors.login = 'Логин должен содержать минимум 3 символа'
-      } else {
-        errors.login = ''
-      }
-      break
-    case 'password':
-      if (!form.password) {
-        errors.password = 'Пароль обязателен'
-      } else if (form.password.length < 6) {
-        errors.password = 'Пароль должен содержать минимум 6 символов'
-      } else {
-        errors.password = ''
-      }
-      break
-  }
+const validateField = () => {
+  // ... ваша валидация
 }
 
 const isFormValid = computed(() => {
   return form.login && form.password && !errors.login && !errors.password
-})
-
-watch(() => form.login, () => {
-  if (errors.login) validateField('login')
-})
-
-watch(() => form.password, () => {
-  if (errors.password) validateField('password')
 })
 
 const handleLogin = async () => {
@@ -153,60 +126,49 @@ const handleLogin = async () => {
   authError.value = ''
 
   try {
-    // Важно: отправляем запрос на полный URL
-    const response = await fetch('http://localhost/api/login', {
+    const response = await fetch(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
       },
-      credentials: 'include', // Важно для CORS с поддержкой credentials
-      mode: 'cors', // Явно указываем режим CORS
+      // Убираем credentials: 'include' - работаем через токены
       body: JSON.stringify({
         login: form.login,
-        password: form.password,
-        remember: form.remember
+        password: form.password
       })
     })
 
-    // Проверяем, что ответ вообще пришел
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
     const data = await response.json()
 
-    if (data.success) {
+    if (response.ok && data.success) {
+      // Сохраняем токен
+      localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
       
-      if (data.token) {
-        localStorage.setItem('token', data.token)
-      }
+      // Редирект
+      const redirectPath = route.query.redirect || '/'
+      await router.push(redirectPath)
       
-      const redirectPath = router.currentRoute.value.query.redirect || '/'
-      router.push(redirectPath)
     } else {
       authError.value = data.message || 'Ошибка авторизации'
     }
+
   } catch (error) {
-    console.error('Детали ошибки:', error)
-    
-    if (error.message.includes('Failed to fetch')) {
-      authError.value = 'Не удалось подключиться к серверу. Проверьте: \n' +
-        '1. Запущен ли Laravel сервер\n' +
-        '2. Правильный ли URL (http://localhost/api/login)\n' +
-        '3. Нет ли блокировок CORS'
-    } else {
-      authError.value = `Ошибка: ${error.message}`
-    }
+    console.error('Ошибка входа:', error)
+    authError.value = `Ошибка: ${error.message}`
   } finally {
     isLoading.value = false
   }
 }
-</script>
 
-<!-- Template и стили остаются теми же -->
+// Автозаполнение
+const savedLogin = localStorage.getItem('remember_user')
+if (savedLogin) {
+  form.login = savedLogin
+}
+</script>
 
 <style scoped>
 .login-container {
@@ -305,19 +267,13 @@ const handleLogin = async () => {
   margin-left: 5px;
 }
 
-.form-options {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  margin-top: 10px;
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
   color: #F0F8FF;
+  font-size: 0.95rem;
 }
 
 .checkbox {
@@ -331,23 +287,13 @@ const handleLogin = async () => {
   font-size: 0.95rem;
 }
 
-.forgot-link {
-  color: #F0F8FF;
-  text-decoration: none;
-  font-size: 0.95rem;
-  transition: color 0.3s ease;
-}
-
-.forgot-link:hover {
-  color: #FFFFFF;
-  text-decoration: underline;
-}
-
 .alert {
   padding: 15px 20px;
   border-radius: 12px;
   font-size: 0.95rem;
   text-align: center;
+  white-space: pre-line;
+  line-height: 1.4;
 }
 
 .alert-error {
@@ -359,7 +305,7 @@ const handleLogin = async () => {
 .login-button {
   width: 100%;
   padding: 16px;
-  margin-top: 20px;
+  margin-top: 10px;
   background: rgba(10, 77, 140, 0.4);
   border: 1px solid rgba(168, 209, 255, 0.3);
   border-radius: 9999px;
@@ -376,6 +322,7 @@ const handleLogin = async () => {
 .login-button:hover:not(:disabled) {
   background: rgba(10, 77, 140, 0.6);
   border-color: rgba(168, 209, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .login-button:disabled {
@@ -383,7 +330,6 @@ const handleLogin = async () => {
   cursor: not-allowed;
 }
 
-/* Loader animation */
 .loader {
   display: inline-block;
   width: 20px;
@@ -406,6 +352,7 @@ const handleLogin = async () => {
 .register-link p {
   color: #F0F8FF;
   margin-bottom: 10px;
+  font-size: 0.95rem;
 }
 
 .register-button {
@@ -423,9 +370,9 @@ const handleLogin = async () => {
 .register-button:hover {
   background: rgba(10, 77, 140, 0.5);
   border-color: rgba(168, 209, 255, 0.4);
+  transform: translateY(-1px);
 }
 
-/* Responsive */
 @media (max-width: 480px) {
   .login-card {
     padding: 40px 20px;
@@ -433,12 +380,6 @@ const handleLogin = async () => {
 
   .login-title {
     font-size: 1.8rem;
-  }
-
-  .form-options {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
   }
 }
 </style>
