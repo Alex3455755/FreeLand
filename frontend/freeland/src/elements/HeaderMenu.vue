@@ -7,9 +7,9 @@
         </div>
         
         <div class="nav-menu">
-          <a href="#" class="nav-link active">Главная</a>
-          <a href="#" class="nav-link">Фрилансеры</a>
-          <a href="#" class="nav-link">Заказы</a>
+          <router-link to="/"  class="nav-link active">Главная</router-link>
+          <router-link to="/freelancer" class="nav-link">Фрилансеры</router-link>
+          <router-link to="/projects" class="nav-link">Заказы</router-link>
           <a href="#" class="nav-link">О нас</a>
           <a href="#" class="nav-link">Контакты</a>
         </div>
@@ -18,7 +18,7 @@
 
   <!-- Если НЕ авторизован -->
   <template v-if="!user">
-    <button class="nav-button login">Войти</button>
+    <router-link class="nav-button login" to="/login">Войти</router-link>
     <router-link class="nav-button register ios-glass" to="/register">Регистрация</router-link>
   </template>
 

@@ -1,13 +1,22 @@
 <?php
 
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Cross-Origin Resource Sharing (CORS) Configuration
+    |--------------------------------------------------------------------------
+    */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*', 'login', 'registred', 'sanctum/csrf-cookie', '*'],
 
     'allowed_methods' => ['*'],
 
-    // ❗ НИКАКИХ '*'
-    'allowed_origins' => ['http://localhost:8080'],
+    'allowed_origins' => [
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'http://localhost:3000',
+        'http://localhost',
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -17,7 +26,6 @@ return [
 
     'max_age' => 0,
 
-    // ❗ ОБЯЗАТЕЛЬНО true для Sanctum
     'supports_credentials' => true,
 
 ];

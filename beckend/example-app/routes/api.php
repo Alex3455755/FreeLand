@@ -15,6 +15,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::options('/{any}', function() {
+    return response()->json([], 200);
+})->where('any', '.*');
+
 
 //Авторизация
 Route::post('/login',[LoginController::class,'login']);
@@ -23,6 +27,7 @@ Route::post('/registred',[RegisterController::class,'registred']);
 
 //Users
 Route::get('/users',[UserController::class,'index']);
+Route::get('/users/{id}',[UserController::class,'show']);
 
 //Projects
 Route::get('/projects',[ProjectController::class,'index']);
