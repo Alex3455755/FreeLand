@@ -73,6 +73,7 @@ Route::get('/comments',[CommentController::class,'index']);
 Route::post('/comments/add',[CommentController::class,'store']);
 Route::post('/comments/edit',[CommentController::class,'update']);
 Route::get('/comments/destroy/{comment}',[CommentController::class,'destroy']);
+Route::get('/comments/user/{user}',[CommentController::class,'userComments']);
 
 //Payments
 Route::get('/payments',[PaymentController::class,'index']);

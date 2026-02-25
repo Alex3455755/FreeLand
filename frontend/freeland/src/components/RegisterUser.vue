@@ -91,8 +91,6 @@ const handleRegister = async () => {
   
   try {
     console.log('Отправляемые данные:', form)
-
-    // Подготавливаем данные
     const userData = {
       full_name: form.full_name,
       phone: form.phone,
@@ -101,14 +99,12 @@ const handleRegister = async () => {
       password: form.password,
       role: form.role
     }
-
-    // Отправляем запрос напрямую, без предварительного получения CSRF cookie
     const response = await fetch(`${API_URL}/api/users/add`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-CSRF-TOKEN': getCsrfToken() // Опционально, если используете CSRF
+        'X-CSRF-TOKEN': getCsrfToken()
       },
       body: JSON.stringify(userData)
     })
@@ -119,20 +115,16 @@ const handleRegister = async () => {
     console.log('Ответ сервера:', data)
 
     if (response.ok) {
-      // Проверяем разные форматы успешного ответа
       if (data.success === true || data.message === 'Пользователь успешно создан' || data.user) {
         message.value = data.message || 'Регистрация успешна!'
         messageType.value = 'success'
         
-        // Очищаем форму
         form.full_name = ''
         form.phone = ''
         form.login = ''
         form.avatar = ''
         form.password = ''
         form.role = ''
-        
-        // Перенаправляем на страницу входа через 2 секунды
         setTimeout(() => {
           router.push('/login')
         }, 2000)

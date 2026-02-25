@@ -44,13 +44,9 @@
               <div class="avatar-large">
                 {{ getInitials(user.full_name || user.name || user.login) }}
               </div>
-              <div class="rating-badge" v-if="user.rating">
-                {{ user.rating }} ★
+              <div class="rating-badge" v-if="user.rating || averageRating">
+                {{ Number(user.rating || averageRating || 0).toFixed(1) }} ★
               </div>
-            </div>
-            
-            <div class="profile-status" :class="user.online ? 'online' : 'offline'">
-              {{ user.online ? 'В сети' : 'Не в сети' }}
             </div>
           </div>
 
@@ -72,17 +68,9 @@
 
             <!-- Кнопки действий -->
             <div class="action-buttons">
-              <button class="action-button primary ios-glass" @click="contactUser">
-                <span class="button-icon">💬</span>
-                Связаться
-              </button>
-              <button class="action-button secondary ios-glass" @click="hireUser" v-if="isFreelancer">
-                <span class="button-icon">🤝</span>
-                Нанять
-              </button>
-              <button class="action-button secondary ios-glass" @click="addToFavorites">
-                <span class="button-icon">⭐</span>
-                В избранное
+              <button v-if="canLeaveReview" class="action-button secondary ios-glass" @click="openReviewModal">
+                <span class="button-icon">✍️</span>
+                Оставить отзыв
               </button>
             </div>
           </div>
@@ -128,27 +116,27 @@
               <h3 class="card-title">Статистика</h3>
               <div class="stats-grid">
                 <div class="stat-item">
-                  <span class="stat-value">{{ user.completed_projects || 0 }}</span>
-                  <span class="stat-label">Завершенных проектов</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-value">{{ user.rating || '0.0' }}</span>
+                  <span class="stat-value">{{ Number(user.rating || averageRating || 0).toFixed(1) }}</span>
                   <span class="stat-label">Рейтинг</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-value">{{ user.experience || 0 }}</span>
-                  <span class="stat-label">Лет опыта</span>
+                  <span class="stat-value">{{ reviews.length }}</span>
+                  <span class="stat-label">Отзывов</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-value">{{ user.reviews_count || 0 }}</span>
-                  <span class="stat-label">Отзывов</span>
+                  <span class="stat-value">{{ user.projects_completed || 0 }}</span>
+                  <span class="stat-label">Проектов</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value">{{ user.registered_days || 0 }}</span>
+                  <span class="stat-label">Дней на сайте</span>
                 </div>
               </div>
             </div>
 
             <!-- Контактная информация -->
             <div class="details-card ios-glass">
-              <h3 class="card-title">Контактная информация</h3>
+              <h3 class="card-title">Контакты</h3>
               <div class="contact-info">
                 <div class="contact-item" v-if="user.email">
                   <span class="contact-icon">📧</span>
@@ -168,17 +156,12 @@
                 <div class="contact-item" v-if="user.github">
                   <span class="contact-icon">🐙</span>
                   <span class="contact-label">GitHub:</span>
-                  <a :href="'https://github.com/' + user.github" target="_blank" class="contact-value">{{ user.github }}</a>
-                </div>
-                <div class="contact-item" v-if="user.website">
-                  <span class="contact-icon">🌐</span>
-                  <span class="contact-label">Сайт:</span>
-                  <a :href="user.website" target="_blank" class="contact-value">{{ user.website }}</a>
+                  <a :href="user.github" target="_blank" class="contact-value">{{ user.github }}</a>
                 </div>
               </div>
             </div>
 
-            <!-- Цены -->
+            <!-- Цены (для фрилансеров) -->
             <div class="details-card ios-glass" v-if="isFreelancer">
               <h3 class="card-title">Цены</h3>
               <div class="pricing-info">
@@ -225,23 +208,56 @@
           </div>
         </div>
 
-        <!-- Отзывы -->
-        <div class="reviews-section ios-glass" v-if="reviews.length">
-          <h3 class="section-title">Отзывы</h3>
-          <div class="reviews-list">
-            <div v-for="review in reviews" :key="review.id" class="review-item">
+        <!-- Отзывы об этом пользователе -->
+        <div class="reviews-section ios-glass">
+          <div class="reviews-header">
+            <h3 class="section-title">Отзывы о {{ user.full_name || user.login }} ({{ reviews.length }})</h3>
+            <div class="reviews-filter" v-if="reviews.length > 0">
+              <span class="filter-label">Сортировка:</span>
+              <select v-model="sortOrder" class="filter-select ios-glass">
+                <option value="newest">Сначала новые</option>
+                <option value="oldest">Сначала старые</option>
+                <option value="highest">Сначала высокий рейтинг</option>
+                <option value="lowest">Сначала низкий рейтинг</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="reviewsLoading" class="reviews-loading">
+            <div class="loader-sm"></div>
+            <span>Загрузка отзывов...</span>
+          </div>
+
+          <div v-else-if="sortedReviews.length > 0" class="reviews-list">
+            <div v-for="review in sortedReviews" :key="review.id" class="review-item">
               <div class="review-header">
-                <div class="reviewer-avatar">{{ getInitials(review.author_name) }}</div>
+                <div class="reviewer-avatar">{{ getAuthorInitials(review.author_id) }}</div>
                 <div class="reviewer-info">
-                  <div class="reviewer-name">{{ review.author_name }}</div>
+                  <div class="reviewer-name">{{ getAuthorName(review.author_id) }}</div>
                   <div class="review-date">{{ formatDate(review.created_at) }}</div>
                 </div>
                 <div class="review-rating">
                   <span v-for="n in 5" :key="n" class="star" :class="{ filled: n <= review.rating }">★</span>
+                  <span class="rating-value">{{ review.rating }}</span>
                 </div>
               </div>
               <p class="review-text">{{ review.text }}</p>
+              
+              <!-- Кнопка удаления для автора отзыва или админа -->
+              <div v-if="review && review.author_id && canDeleteReview(review)" class="review-actions">
+                <button @click="deleteReview(review.id)" class="delete-review-button">
+                  <span class="button-icon">🗑️</span>
+                  Удалить
+                </button>
+              </div>
             </div>
+          </div>
+
+          <div v-else class="no-reviews">
+            <p>У пользователя пока нет отзывов</p>
+            <button v-if="canLeaveReview" @click="openReviewModal" class="write-review-button ios-glass">
+              ✍️ Написать первый отзыв
+            </button>
           </div>
         </div>
       </div>
@@ -256,6 +272,54 @@
         </button>
       </div>
     </div>
+
+    <!-- Модальное окно для отзыва -->
+    <div v-if="showReviewModal" class="modal-overlay" @click.self="closeReviewModal">
+      <div class="modal-container ios-glass">
+        <div class="modal-header">
+          <h2 class="modal-title">Оставить отзыв о {{ user?.full_name || user?.login }}</h2>
+          <button @click="closeReviewModal" class="modal-close">×</button>
+        </div>
+        
+        <form @submit.prevent="submitReview" class="modal-form">
+          <div class="form-group">
+            <label>Оценка <span class="required">*</span></label>
+            <div class="rating-input">
+              <span 
+                v-for="n in 5" 
+                :key="n" 
+                class="rating-star" 
+                :class="{ active: n <= reviewForm.rating }"
+                @click="reviewForm.rating = n"
+              >★</span>
+              <span class="rating-text">{{ reviewForm.rating }}/5</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label>Текст отзыва <span class="required">*</span></label>
+            <textarea 
+              v-model="reviewForm.text" 
+              class="form-input ios-glass" 
+              rows="5"
+              placeholder="Напишите ваш отзыв..."
+              required
+            ></textarea>
+          </div>
+          
+          <div class="modal-actions">
+            <button type="button" @click="closeReviewModal" class="modal-button cancel">
+              Отмена
+            </button>
+            <button type="submit" class="modal-button submit" :disabled="reviewSubmitting">
+              <span v-if="reviewSubmitting" class="button-spinner"></span>
+              {{ reviewSubmitting ? 'Отправка...' : 'Оставить отзыв' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <FooterApp />
   </div>
 </template>
@@ -276,24 +340,110 @@ export default {
     return {
       user: null,
       reviews: [],
+      reviewsLoading: false,
       loading: true,
-      apiBaseUrl: ''
+      apiBaseUrl: '',
+      
+      // Текущий пользователь (авторизованный)
+      currentUser: null,
+      
+      // Кэш для авторов отзывов
+      reviewAuthors: {},
+      loadingAuthors: {},
+      
+      // Сортировка отзывов
+      sortOrder: 'newest',
+      
+      // Модальное окно отзыва
+      showReviewModal: false,
+      reviewSubmitting: false,
+      reviewForm: {
+        rating: 5,
+        text: ''
+      }
     }
   },
   
   computed: {
     isFreelancer() {
       return this.user && (this.user.role === 'freelancer' || this.user.role === 'Фрилансер' || this.user.role === 2);
+    },
+    
+    // Средний рейтинг из отзывов
+    averageRating() {
+      if (!this.reviews || !this.reviews.length) return 0;
+      const sum = this.reviews.reduce((acc, review) => {
+        const rating = Number(review.rating) || 0;
+        return acc + rating;
+      }, 0);
+      return sum / this.reviews.length;
+    },
+    
+    // Может ли текущий пользователь оставить отзыв
+    canLeaveReview() {
+      if (!this.currentUser || !this.user) return false;
+      // Нельзя оставить отзыв самому себе
+      if (this.currentUser.id === this.user.id) return false;
+      // Проверяем, не оставлял ли уже отзыв
+      return !this.reviews.some(r => r.author_id === this.currentUser.id);
+    },
+    
+    // Отсортированные отзывы
+    sortedReviews() {
+      const reviews = [...this.reviews];
+      
+      switch (this.sortOrder) {
+        case 'newest':
+          return reviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        case 'oldest':
+          return reviews.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        case 'highest':
+          return reviews.sort((a, b) => b.rating - a.rating);
+        case 'lowest':
+          return reviews.sort((a, b) => a.rating - b.rating);
+        default:
+          return reviews;
+      }
     }
   },
   
   created() {
+    this.fetchCurrentUser();
     this.fetchUser();
-    this.fetchReviews();
     this.initParticles();
   },
   
   methods: {
+    // Получение текущего пользователя
+    async fetchCurrentUser() {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.currentUser = null;
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/user`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          this.currentUser = data.user;
+        } else {
+          this.currentUser = null;
+        }
+      } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        this.currentUser = null;
+      }
+    },
+    
     async fetchUser() {
       try {
         const userId = this.$route.params.id;
@@ -305,7 +455,16 @@ export default {
         
         const data = await response.json();
         this.user = data.user || data;
+        
+        // Приводим рейтинг к числу
+        if (this.user.rating) {
+          this.user.rating = Number(this.user.rating);
+        }
+        
         console.log('Загружен пользователь:', this.user);
+        
+        // После загрузки пользователя загружаем отзывы о нем
+        await this.fetchReviews();
         
       } catch (error) {
         console.error('Ошибка при загрузке пользователя:', error);
@@ -316,19 +475,289 @@ export default {
     },
     
     async fetchReviews() {
+      if (!this.user) return;
+      
+      this.reviewsLoading = true;
+      
       try {
-        const userId = this.$route.params.id;
-        const response = await fetch(`${this.apiBaseUrl}/api/comments?user_id=${userId}`);
+        const userId = this.user.id;
+        const response = await fetch(`${this.apiBaseUrl}/api/comments/user/${userId}`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
-        this.reviews = data;
+        
+        // Обрабатываем разные форматы ответа
+        let reviews = [];
+        if (data.comments) {
+          reviews = data.comments;
+        } else if (Array.isArray(data)) {
+          reviews = data;
+        } else {
+          reviews = [];
+        }
+        
+        // Убеждаемся, что каждый отзыв имеет author_id
+        this.reviews = reviews.map(review => ({
+          ...review,
+          author_id: review.author_id || review.author?.id
+        }));
+        
+        console.log('Загружены отзывы о пользователе:', this.reviews);
+        
+        // Инициализируем объекты для кэша
+        if (!this.reviewAuthors) {
+          this.reviewAuthors = {};
+        }
+        if (!this.loadingAuthors) {
+          this.loadingAuthors = {};
+        }
+        
+        // Загружаем авторов отзывов
+        const authorIds = [...new Set(this.reviews.map(r => r.author_id).filter(id => id))];
+        for (const authorId of authorIds) {
+          await this.fetchAuthor(authorId);
+        }
+        
+        // Обновляем рейтинг пользователя на основе отзывов
+        this.updateUserRating();
         
       } catch (error) {
         console.error('Ошибка при загрузке отзывов:', error);
+        this.reviews = [];
+      } finally {
+        this.reviewsLoading = false;
+      }
+    },
+    
+    // Загрузить данные автора
+    async fetchAuthor(authorId) {
+      if (!authorId) return;
+      
+      // Проверяем, не загружается ли уже
+      if (this.loadingAuthors && this.loadingAuthors[authorId]) return;
+      
+      // Помечаем как загружающийся
+      if (!this.loadingAuthors) {
+        this.loadingAuthors = {};
+      }
+      this.loadingAuthors[authorId] = true;
+      
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/users/${authorId}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const author = data.user || data;
+        
+        // Сохраняем в кэш
+        if (!this.reviewAuthors) {
+          this.reviewAuthors = {};
+        }
+        this.reviewAuthors[authorId] = author;
+        this.$forceUpdate();
+        
+      } catch (error) {
+        console.error('Ошибка при загрузке автора:', error);
+        // Сохраняем заглушку
+        if (!this.reviewAuthors) {
+          this.reviewAuthors = {};
+        }
+        this.reviewAuthors[authorId] = { full_name: 'Пользователь', login: 'user' };
+        this.$forceUpdate();
+      } finally {
+        // Снимаем пометку о загрузке
+        if (this.loadingAuthors) {
+          this.loadingAuthors[authorId] = false;
+        }
+      }
+    },
+    
+    // Получить имя автора по ID
+    getAuthorName(authorId) {
+      if (!authorId) return 'Пользователь';
+      
+      // Если автор - текущий пользователь
+      if (this.currentUser && this.currentUser.id === authorId) {
+        return this.currentUser.full_name || this.currentUser.login || 'Пользователь';
+      }
+      
+      // Ищем автора в загруженных данных
+      if (this.reviewAuthors && this.reviewAuthors[authorId]) {
+        const author = this.reviewAuthors[authorId];
+        return author.full_name || author.login || 'Пользователь';
+      }
+      
+      // Если автора нет в кэше, загружаем его данные (асинхронно)
+      this.fetchAuthor(authorId);
+      return 'Загрузка...';
+    },
+    
+    // Получить инициалы автора по ID
+    getAuthorInitials(authorId) {
+      const name = this.getAuthorName(authorId);
+      return this.getInitials(name);
+    },
+    
+    // Обновление рейтинга пользователя
+    updateUserRating() {
+      if (this.reviews.length > 0 && this.user) {
+        const avgRating = this.averageRating;
+        this.user.rating = avgRating;
+      }
+    },
+    
+    // Открыть модальное окно отзыва
+    openReviewModal() {
+      if (!this.currentUser) {
+        this.showNotification('Необходимо авторизоваться', 'error');
+        this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath));
+        return;
+      }
+      
+      this.reviewForm = {
+        rating: 5,
+        text: ''
+      };
+      this.showReviewModal = true;
+      document.body.style.overflow = 'hidden';
+    },
+    
+    // Закрыть модальное окно
+    closeReviewModal() {
+      this.showReviewModal = false;
+      document.body.style.overflow = '';
+    },
+    
+    // Отправить отзыв
+    async submitReview() {
+      if (!this.currentUser) {
+        this.showNotification('Необходимо авторизоваться', 'error');
+        this.closeReviewModal();
+        this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath));
+        return;
+      }
+      
+      if (!this.reviewForm.rating || this.reviewForm.rating < 1 || this.reviewForm.rating > 5) {
+        this.showNotification('Выберите оценку от 1 до 5', 'error');
+        return;
+      }
+      
+      if (!this.reviewForm.text.trim()) {
+        this.showNotification('Введите текст отзыва', 'error');
+        return;
+      }
+      
+      this.reviewSubmitting = true;
+      const token = localStorage.getItem('token');
+      
+      try {
+        const reviewData = {
+          author_id: this.currentUser.id,
+          user_id: this.user.id,
+          rating: this.reviewForm.rating,
+          text: this.reviewForm.text.trim(),
+          created_at: new Date().toISOString()
+        };
+        
+        console.log('Отправка отзыва:', reviewData);
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/comments/add`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(reviewData)
+        });
+        
+        const data = await response.json();
+        console.log('Ответ сервера:', data);
+        
+        if (response.ok && data.success) {
+          // Добавляем автора в кэш
+          if (!this.reviewAuthors) {
+            this.reviewAuthors = {};
+          }
+          this.reviewAuthors[this.currentUser.id] = this.currentUser;
+          
+          // Добавляем отзыв в список
+          const newReview = {
+            id: data.comment_id || Date.now(),
+            author_id: this.currentUser.id,
+            user_id: this.user.id,
+            rating: this.reviewForm.rating,
+            text: this.reviewForm.text.trim(),
+            created_at: new Date().toISOString()
+          };
+          
+          this.reviews.unshift(newReview);
+          
+          // Обновляем рейтинг пользователя
+          this.updateUserRating();
+          
+          this.showNotification('Отзыв успешно добавлен', 'success');
+          this.closeReviewModal();
+        } else {
+          throw new Error(data.message || 'Ошибка при добавлении отзыва');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка при отправке отзыва:', error);
+        this.showNotification(error.message || 'Ошибка при добавлении отзыва', 'error');
+      } finally {
+        this.reviewSubmitting = false;
+      }
+    },
+    
+    // Может ли пользователь удалить отзыв
+    canDeleteReview(review) {
+      if (!review || !review.author_id) return false;
+      return this.currentUser && (
+        this.currentUser.id === review.author_id ||
+        this.currentUser.role === 'admin'
+      );
+    },
+    
+    // Удалить отзыв
+    async deleteReview(reviewId) {
+      if (!confirm('Вы уверены, что хотите удалить этот отзыв?')) {
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/comments/destroy/${reviewId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          this.reviews = this.reviews.filter(r => r.id !== reviewId);
+          
+          // Обновляем рейтинг пользователя после удаления
+          this.updateUserRating();
+          
+          this.showNotification('Отзыв удален', 'success');
+        } else {
+          throw new Error(data.message || 'Ошибка при удалении отзыва');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка при удалении отзыва:', error);
+        this.showNotification(error.message || 'Ошибка при удалении отзыва', 'error');
       }
     },
     
@@ -337,16 +766,12 @@ export default {
     },
     
     contactUser() {
+      if (!this.currentUser) {
+        this.showNotification('Необходимо авторизоваться', 'error');
+        this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath));
+        return;
+      }
       this.$router.push(`/messages?user=${this.user.id}`);
-    },
-    
-    hireUser() {
-      this.$router.push(`/projects/create?freelancer=${this.user.id}`);
-    },
-    
-    addToFavorites() {
-      // Логика добавления в избранное
-      this.showNotification('Добавлено в избранное', 'success');
     },
     
     formatRole(role) {
@@ -371,7 +796,9 @@ export default {
       return new Date(date).toLocaleDateString('ru-RU', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     },
     
@@ -408,15 +835,26 @@ export default {
       }
     },
     
-    showNotification(message, type = 'info') {
-      console.log(`[${type}] ${message}`);
-      // Здесь можно добавить toast-уведомления
+    showNotification(message) {
+      // Здесь можно добавить красивые toast-уведомления
+      alert(message);
+    }
+  },
+  
+  watch: {
+    // Следим за изменениями отзывов для обновления рейтинга
+    reviews: {
+      handler() {
+        this.updateUserRating();
+      },
+      deep: true
     }
   }
 }
 </script>
 
 <style scoped>
+/* Все стили остаются без изменений */
 .user-detail-page {
   min-height: 100vh;
   display: flex;
@@ -912,6 +1350,55 @@ export default {
 }
 
 /* Отзывы */
+.reviews-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.reviews-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  color: #A8D1FF;
+  font-size: 0.95rem;
+}
+
+.filter-select {
+  padding: 8px 16px;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.4);
+}
+
+.filter-select option {
+  background: #0A1A2A;
+  color: #FFFFFF;
+}
+
+.reviews-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 40px;
+  color: #F0F8FF;
+}
+
 .reviews-list {
   display: flex;
   flex-direction: column;
@@ -962,7 +1449,8 @@ export default {
 
 .review-rating {
   display: flex;
-  gap: 3px;
+  align-items: center;
+  gap: 8px;
 }
 
 .star {
@@ -974,10 +1462,253 @@ export default {
   color: #f1c40f;
 }
 
+.rating-value {
+  color: #A8D1FF;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .review-text {
   color: #F0F8FF;
   line-height: 1.8;
   font-size: 1rem;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+.delete-review-button {
+  padding: 6px 12px;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  border-radius: 9999px;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.delete-review-button:hover {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: rgba(231, 76, 60, 0.5);
+}
+
+.no-reviews {
+  text-align: center;
+  padding: 40px;
+  color: #F0F8FF;
+  opacity: 0.8;
+}
+
+.write-review-button {
+  margin-top: 20px;
+  padding: 12px 24px;
+  background: rgba(10, 77, 140, 0.3);
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  border-radius: 9999px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.write-review-button:hover {
+  background: rgba(10, 77, 140, 0.5);
+  border-color: rgba(168, 209, 255, 0.5);
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-container {
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 30px;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  animation: modalFadeIn 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.modal-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.modal-close {
+  font-size: 2.5rem;
+  background: none;
+  border: none;
+  color: rgba(168, 209, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #FFFFFF;
+  transform: scale(1.1);
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #F0F8FF;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.required {
+  color: #e74c3c;
+  margin-left: 4px;
+}
+
+.rating-input {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.rating-star {
+  font-size: 2rem;
+  color: #bdc3c7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rating-star.active {
+  color: #f1c40f;
+  text-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+}
+
+.rating-star:hover {
+  transform: scale(1.2);
+}
+
+.rating-text {
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+.form-input {
+  padding: 12px 16px;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-family: inherit;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.4);
+  background: rgba(10, 77, 140, 0.3);
+}
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(168, 209, 255, 0.1);
+}
+
+.modal-button {
+  padding: 12px 30px;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.modal-button.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #F0F8FF;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+}
+
+.modal-button.cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.modal-button.submit {
+  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  color: #FFFFFF;
+  border: 1px solid rgba(168, 209, 255, 0.3);
+}
+
+.modal-button.submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1A5D9C, #2A7BC3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(10, 77, 140, 0.4);
+}
+
+.modal-button.submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
 }
 
 /* Состояния */
@@ -1008,9 +1739,29 @@ export default {
   to { transform: rotate(360deg); }
 }
 
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .loader p {
   color: #F0F8FF;
   font-size: 1.1rem;
+}
+
+.loader-sm {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 .not-found-state {
@@ -1092,6 +1843,31 @@ export default {
   
   .review-rating {
     justify-content: center;
+  }
+  
+  .reviews-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .reviews-filter {
+    width: 100%;
+  }
+  
+  .filter-select {
+    flex: 1;
+  }
+  
+  .rating-input {
+    justify-content: center;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-button {
+    width: 100%;
   }
 }
 

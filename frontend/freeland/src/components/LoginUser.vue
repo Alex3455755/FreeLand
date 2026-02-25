@@ -133,7 +133,6 @@ const handleLogin = async () => {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest'
       },
-      // Убираем credentials: 'include' - работаем через токены
       body: JSON.stringify({
         login: form.login,
         password: form.password
@@ -143,11 +142,8 @@ const handleLogin = async () => {
     const data = await response.json()
 
     if (response.ok && data.success) {
-      // Сохраняем токен
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
-      
-      // Редирект
       const redirectPath = route.query.redirect || '/'
       await router.push(redirectPath)
       

@@ -72,9 +72,9 @@
               <span>Загрузка данных заказчика...</span>
             </div>
             <div v-else-if="customer" class="customer-card ios-glass">
-              <div class="customer-avatar-large">
+              <router-link :to="`/freelancers/${customer.id}`" class="customer-avatar-large">
                 {{ getInitials(customer.full_name || customer.name || customer.login) }}
-              </div>
+              </router-link>
               <div class="customer-details">
                 <!-- Полное имя -->
                 <div class="customer-name-large">
@@ -119,9 +119,9 @@
               <span>Загрузка данных исполнителя...</span>
             </div>
             <div v-else-if="freelancer" class="customer-card ios-glass">
-              <div class="customer-avatar-large">
+              <router-link :to="`/freelancers/${freelancer.id}`" class="customer-avatar-large">
                 {{ getInitials(freelancer.full_name || freelancer.name || freelancer.login) }}
-              </div>
+              </router-link>
               <div class="customer-details">
                 <div class="customer-name-large">
                   {{ freelancer.full_name || freelancer.name || freelancer.login || 'Без имени' }}
@@ -134,6 +134,49 @@
                   <span class="info-label">📞 Телефон:</span>
                   <span class="info-value">{{ freelancer.phone }}</span>
                 </div>
+                
+                <!-- Кнопка удаления исполнителя (только для автора) -->
+                <div v-if="isAuthor" class="freelancer-actions">
+                  <button @click="confirmRemoveFreelancer" class="remove-freelancer-button">
+                    <span class="button-icon">🗑️</span>
+                    Убрать исполнителя
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Управление статусом для автора -->
+          <div v-if="isAuthor" class="management-section ios-glass">
+            <h3>Управление проектом</h3>
+            
+            <div class="status-management">
+              <label for="status-select">Статус проекта:</label>
+              <div class="status-controls">
+                <select 
+                  id="status-select" 
+                  v-model="selectedStatus" 
+                  class="status-select ios-glass"
+                  :disabled="statusUpdating"
+                >
+                  <option value="open">Открыт</option>
+                  <option value="in_progress">В работе</option>
+                  <option value="completed">Завершен</option>
+                  <option value="cancelled">Отменен</option>
+                </select>
+                
+                <button 
+                  @click="updateStatus" 
+                  class="update-status-button"
+                  :disabled="statusUpdating || selectedStatus === project.status"
+                >
+                  <span v-if="statusUpdating" class="button-spinner-small"></span>
+                  {{ statusUpdating ? 'Обновление...' : 'Обновить статус' }}
+                </button>
+              </div>
+              
+              <div v-if="statusMessage" class="status-message" :class="statusMessageType">
+                {{ statusMessage }}
               </div>
             </div>
           </div>
@@ -156,6 +199,31 @@
               {{ respondMessage }}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления исполнителя -->
+    <div v-if="showRemoveConfirm" class="modal-overlay" @click.self="cancelRemoveFreelancer">
+      <div class="modal-container ios-glass">
+        <div class="modal-header">
+          <h2 class="modal-title">Подтверждение</h2>
+          <button @click="cancelRemoveFreelancer" class="modal-close">×</button>
+        </div>
+        
+        <div class="modal-content">
+          <p>Вы уверены, что хотите убрать исполнителя <strong>{{ freelancer?.full_name || freelancer?.login }}</strong> из проекта?</p>
+          <p class="warning-text">Это действие изменит статус проекта на "Открыт" и позволит другим фрилансерам откликаться.</p>
+        </div>
+        
+        <div class="modal-actions">
+          <button @click="cancelRemoveFreelancer" class="modal-button cancel">
+            Отмена
+          </button>
+          <button @click="removeFreelancer" class="modal-button delete" :disabled="removingFreelancer">
+            <span v-if="removingFreelancer" class="button-spinner"></span>
+            {{ removingFreelancer ? 'Удаление...' : 'Убрать исполнителя' }}
+          </button>
         </div>
       </div>
     </div>
@@ -184,11 +252,26 @@ export default {
       // Состояние отклика
       responding: false,
       respondMessage: '',
-      respondMessageType: ''
+      respondMessageType: '',
+      
+      // Управление статусом
+      selectedStatus: '',
+      statusUpdating: false,
+      statusMessage: '',
+      statusMessageType: '',
+      
+      // Удаление исполнителя
+      showRemoveConfirm: false,
+      removingFreelancer: false
     }
   },
   
   computed: {
+    // Проверка, является ли текущий пользователь автором проекта
+    isAuthor() {
+      return this.user && this.customer && this.user.id === this.customer.id;
+    },
+    
     // Проверка, может ли пользователь откликнуться
     canRespond() {
       return this.user && 
@@ -268,6 +351,7 @@ export default {
         }
         
         console.log('Загружен проект:', this.project);
+        this.selectedStatus = this.project.status;
         
         if (this.project.customer_id) {
           await this.fetchCustomer(this.project.customer_id);
@@ -372,6 +456,126 @@ export default {
       }
     },
     
+    // Обновление статуса проекта
+    async updateStatus() {
+      if (this.selectedStatus === this.project.status) {
+        return;
+      }
+      
+      this.statusUpdating = true;
+      this.statusMessage = '';
+      
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.showMessage('Необходимо авторизоваться', 'error');
+        this.statusUpdating = false;
+        return;
+      }
+      
+      try {
+        const projectData = {
+          id: this.project.id,
+          status: this.selectedStatus
+        };
+        
+        console.log('Обновление статуса:', projectData);
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/projects/edit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(projectData)
+        });
+        
+        const result = await response.json();
+        console.log('Ответ сервера:', result);
+        
+        if (response.ok && result.success) {
+          this.project.status = this.selectedStatus;
+          this.showStatusMessage('Статус проекта успешно обновлен', 'success');
+        } else {
+          throw new Error(result.message || 'Ошибка при обновлении статуса');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка при обновлении статуса:', error);
+        this.showStatusMessage(error.message || 'Ошибка при обновлении статуса', 'error');
+        this.selectedStatus = this.project.status;
+      } finally {
+        this.statusUpdating = false;
+      }
+    },
+    
+    // Подтверждение удаления исполнителя
+    confirmRemoveFreelancer() {
+      this.showRemoveConfirm = true;
+      document.body.style.overflow = 'hidden';
+    },
+    
+    // Отмена удаления исполнителя
+    cancelRemoveFreelancer() {
+      this.showRemoveConfirm = false;
+      document.body.style.overflow = '';
+    },
+    
+    // Удаление исполнителя
+    async removeFreelancer() {
+      this.removingFreelancer = true;
+      
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.showMessage('Необходимо авторизоваться', 'error');
+        this.removingFreelancer = false;
+        this.cancelRemoveFreelancer();
+        return;
+      }
+      
+      try {
+        const projectData = {
+          id: this.project.id,
+          freelancer_id: null,
+          status: 'open' // Возвращаем статус в открытый
+        };
+        
+        console.log('Удаление исполнителя:', projectData);
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/projects/edit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(projectData)
+        });
+        
+        const result = await response.json();
+        console.log('Ответ сервера:', result);
+        
+        if (response.ok && result.success) {
+          this.project.freelancer_id = null;
+          this.project.status = 'open';
+          this.freelancer = null;
+          this.selectedStatus = 'open';
+          
+          this.showMessage('Исполнитель удален из проекта', 'success');
+          this.cancelRemoveFreelancer();
+        } else {
+          throw new Error(result.message || 'Ошибка при удалении исполнителя');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка при удалении исполнителя:', error);
+        this.showMessage(error.message || 'Ошибка при удалении исполнителя', 'error');
+        this.cancelRemoveFreelancer();
+      } finally {
+        this.removingFreelancer = false;
+      }
+    },
+    
     // Метод для отклика на проект
     async respondToProject() {
       if (!this.user || this.user.role !== 'freelancer') {
@@ -401,11 +605,10 @@ export default {
       }
       
       try {
-        // Подготавливаем данные для обновления проекта
         const projectData = {
           id: this.project.id,
           freelancer_id: this.user.id,
-          status: 'in_progress' // Меняем статус на "в работе"
+          status: 'in_progress'
         };
         
         console.log('Отправка данных:', projectData);
@@ -423,11 +626,10 @@ export default {
         console.log('Ответ сервера:', result);
         
         if (response.ok && result.success) {
-          // Обновляем данные проекта
           this.project.freelancer_id = this.user.id;
           this.project.status = 'in_progress';
+          this.selectedStatus = 'in_progress';
           
-          // Загружаем данные фрилансера
           await this.fetchFreelancer(this.user.id);
           
           this.showMessage('Вы успешно откликнулись на проект!', 'success');
@@ -447,10 +649,19 @@ export default {
       this.respondMessage = message;
       this.respondMessageType = type;
       
-      // Автоматически скрываем сообщение через 5 секунд
       setTimeout(() => {
         this.respondMessage = '';
         this.respondMessageType = '';
+      }, 5000);
+    },
+    
+    showStatusMessage(message, type = 'info') {
+      this.statusMessage = message;
+      this.statusMessageType = type;
+      
+      setTimeout(() => {
+        this.statusMessage = '';
+        this.statusMessageType = '';
       }, 5000);
     },
     
@@ -500,12 +711,18 @@ export default {
     showNotification(message, type) {
       console.log(`[${type}] ${message}`);
     }
+  },
+  
+  watch: {
+    'project.status': function(newStatus) {
+      this.selectedStatus = newStatus;
+    }
   }
 }
 </script>
 
 <style scoped>
-/* Добавьте новые стили для дополнительных полей */
+/* Существующие стили */
 .customer-login,
 .customer-phone,
 .customer-avatar-info {
@@ -527,6 +744,261 @@ export default {
 .customer-avatar-info .info-value {
   font-size: 1rem;
   color: #F0F8FF;
+}
+
+/* Новые стили для управления */
+.management-section {
+  margin-top: 40px;
+  padding: 30px;
+  background: rgba(10, 77, 140, 0.2);
+  border-radius: 24px;
+}
+
+.management-section h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #FFFFFF;
+}
+
+.status-management {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.status-management label {
+  color: #F0F8FF;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.status-controls {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.status-select {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 20px;
+  background: rgba(10, 77, 140, 0.3);
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.6);
+}
+
+.status-select option {
+  background: #0A1A2A;
+  color: #FFFFFF;
+}
+
+.update-status-button {
+  padding: 12px 30px;
+  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  border: none;
+  border-radius: 12px;
+  color: #FFFFFF;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.update-status-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1A6BB3, #2A7FC9);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(8, 51, 88, 0.4);
+}
+
+.update-status-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.button-spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.status-message {
+  margin-top: 15px;
+  padding: 10px 15px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+}
+
+.status-message.success {
+  background: rgba(46, 204, 113, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  color: #2ecc71;
+}
+
+.status-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #e74c3c;
+}
+
+.freelancer-actions {
+  margin-top: 15px;
+}
+
+.remove-freelancer-button {
+  padding: 8px 16px;
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  border-radius: 9999px;
+  color: #e74c3c;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.remove-freelancer-button:hover {
+  background: rgba(231, 76, 60, 0.3);
+  border-color: rgba(231, 76, 60, 0.6);
+}
+
+/* Стили для модального окна */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-container {
+  max-width: 500px;
+  width: 100%;
+  padding: 30px;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  animation: modalFadeIn 0.3s ease;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.modal-close {
+  font-size: 2.5rem;
+  background: none;
+  border: none;
+  color: rgba(168, 209, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #FFFFFF;
+  transform: scale(1.1);
+}
+
+.modal-content {
+  margin-bottom: 30px;
+  color: #F0F8FF;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+.warning-text {
+  color: #e74c3c;
+  font-size: 0.95rem;
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(231, 76, 60, 0.1);
+  border-radius: 8px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.modal-button {
+  padding: 12px 30px;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.modal-button.cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #F0F8FF;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+}
+
+.modal-button.cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.modal-button.delete {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+.modal-button.delete:hover:not(:disabled) {
+  background: rgba(231, 76, 60, 0.3);
+  border-color: rgba(231, 76, 60, 0.6);
+}
+
+.modal-button.delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Стили для секции действий */
@@ -623,7 +1095,7 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-/* Остальные стили остаются без изменений */
+/* Остальные стили */
 .project-detail-page {
   min-height: 100vh;
   padding: 40px 0;
@@ -792,6 +1264,12 @@ export default {
   color: #FFFFFF;
   border: 3px solid rgba(168, 209, 255, 0.3);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.customer-avatar-large:hover {
+  transform: scale(1.05);
 }
 
 .customer-details {
@@ -896,11 +1374,27 @@ export default {
     justify-content: center;
   }
   
+  .status-controls {
+    flex-direction: column;
+  }
+  
+  .update-status-button {
+    width: 100%;
+  }
+  
   .respond-button {
     width: 100%;
     min-width: auto;
     padding: 15px 30px;
     font-size: 1.1rem;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .modal-button {
+    width: 100%;
   }
 }
 
@@ -920,6 +1414,10 @@ export default {
   
   .customer-card {
     padding: 15px;
+  }
+  
+  .management-section {
+    padding: 20px;
   }
 }
 </style>

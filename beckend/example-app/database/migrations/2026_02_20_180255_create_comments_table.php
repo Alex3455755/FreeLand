@@ -13,12 +13,12 @@ return new class extends Migration
             $table->text('text');
             $table->integer('rating')->default(5);
             
-            $table->foreignId('project_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('author_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             
             $table->timestamps();
             
-            $table->index('project_id');
+            $table->index('author_id');
         });
     }
 
