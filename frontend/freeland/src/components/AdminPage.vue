@@ -288,7 +288,7 @@
                 <input v-model="modalData.login" type="text" class="form-input ios-glass" required>
               </div>
               <label>Роль</label>
-              <select v-model="modalData.status" class="form-input ios-glass">
+              <select v-model="modalData.role" class="form-input ios-glass">
                   <option value="admin">Админ</option>
                   <option value="customer">Клиент</option>
                   <option value="freelancer">Фрилансер</option>

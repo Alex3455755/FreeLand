@@ -9,6 +9,7 @@ import ProjectDetail from '@/components/ProjectDetail.vue'
 import FreelancersPage from '@/components/FreelancersPage.vue'
 import UserDetail from '@/components/UserDetail.vue'
 import AdminPage from '@/components/AdminPage.vue'
+import MyProjects from '@/components/MyProjects.vue'
 
 const routes = [
     { path: '/', component: HomePage },
@@ -38,6 +39,9 @@ const routes = [
   {
     path: '/admin',
     component: AdminPage
+  },{
+    path: '/my-projects',
+    component: MyProjects
   }
 ]
 

@@ -39,6 +39,10 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'freelancer_id');
     }
+    public function freelancer()
+    {
+        return $this->belongsTo(User::class, 'freelancer_id');
+    }
 
     public function comments()
     {

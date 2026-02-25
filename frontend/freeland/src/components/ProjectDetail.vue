@@ -137,6 +137,25 @@
               </div>
             </div>
           </div>
+
+          <!-- Кнопка отклика для фрилансеров -->
+          <div v-if="canRespond" class="action-section">
+            <button 
+              @click="respondToProject" 
+              class="respond-button ios-glass"
+              :disabled="responding || project.freelancer_id || project.status !== 'open'"
+            >
+              <span v-if="responding" class="button-spinner"></span>
+              <span class="button-text">
+                {{ getButtonText }}
+              </span>
+              <span class="button-glow"></span>
+            </button>
+            
+            <div v-if="respondMessage" class="respond-message" :class="respondMessageType">
+              {{ respondMessage }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -156,16 +175,81 @@ export default {
       customerLoading: false,
       freelancerLoading: false,
       loading: true,
-      apiBaseUrl: ''
+      apiBaseUrl: '',
+      
+      // Данные пользователя
+      user: null,
+      userLoading: true,
+      
+      // Состояние отклика
+      responding: false,
+      respondMessage: '',
+      respondMessageType: ''
+    }
+  },
+  
+  computed: {
+    // Проверка, может ли пользователь откликнуться
+    canRespond() {
+      return this.user && 
+             this.user.role === 'freelancer' && 
+             this.project && 
+             this.project.status === 'open' && 
+             !this.project.freelancer_id;
+    },
+    
+    // Текст кнопки в зависимости от состояния
+    getButtonText() {
+      if (this.responding) return 'Отправка...';
+      if (this.project?.freelancer_id) return 'Проект уже занят';
+      if (this.project?.status !== 'open') return 'Проект закрыт';
+      return 'Откликнуться на проект';
     }
   },
   
   created() {
+    this.fetchCurrentUser();
     this.fetchProject();
     this.fetchCategories();
   },
   
   methods: {
+    // Получение текущего пользователя
+    async fetchCurrentUser() {
+      this.userLoading = true;
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.user = null;
+        this.userLoading = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/user`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+          this.user = data.user;
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          this.user = null;
+        }
+      } catch (error) {
+        console.error('Ошибка получения пользователя:', error);
+        this.user = null;
+      } finally {
+        this.userLoading = false;
+      }
+    },
+    
     async fetchProject() {
       try {
         const projectId = this.$route.params.id;
@@ -288,6 +372,88 @@ export default {
       }
     },
     
+    // Метод для отклика на проект
+    async respondToProject() {
+      if (!this.user || this.user.role !== 'freelancer') {
+        this.showMessage('Только фрилансеры могут откликаться на проекты', 'error');
+        return;
+      }
+      
+      if (this.project.freelancer_id) {
+        this.showMessage('На этот проект уже есть исполнитель', 'error');
+        return;
+      }
+      
+      if (this.project.status !== 'open') {
+        this.showMessage('Этот проект уже закрыт для откликов', 'error');
+        return;
+      }
+      
+      this.responding = true;
+      this.respondMessage = '';
+      
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        this.showMessage('Необходимо авторизоваться', 'error');
+        this.responding = false;
+        return;
+      }
+      
+      try {
+        // Подготавливаем данные для обновления проекта
+        const projectData = {
+          id: this.project.id,
+          freelancer_id: this.user.id,
+          status: 'in_progress' // Меняем статус на "в работе"
+        };
+        
+        console.log('Отправка данных:', projectData);
+        
+        const response = await fetch(`${this.apiBaseUrl}/api/projects/edit`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(projectData)
+        });
+        
+        const result = await response.json();
+        console.log('Ответ сервера:', result);
+        
+        if (response.ok && result.success) {
+          // Обновляем данные проекта
+          this.project.freelancer_id = this.user.id;
+          this.project.status = 'in_progress';
+          
+          // Загружаем данные фрилансера
+          await this.fetchFreelancer(this.user.id);
+          
+          this.showMessage('Вы успешно откликнулись на проект!', 'success');
+        } else {
+          throw new Error(result.message || 'Ошибка при отклике на проект');
+        }
+        
+      } catch (error) {
+        console.error('Ошибка при отклике:', error);
+        this.showMessage(error.message || 'Ошибка при отклике на проект', 'error');
+      } finally {
+        this.responding = false;
+      }
+    },
+    
+    showMessage(message, type = 'info') {
+      this.respondMessage = message;
+      this.respondMessageType = type;
+      
+      // Автоматически скрываем сообщение через 5 секунд
+      setTimeout(() => {
+        this.respondMessage = '';
+        this.respondMessageType = '';
+      }, 5000);
+    },
+    
     getCategoryName(categoryId) {
       if (!categoryId) return 'Без категории';
       const category = this.categories.find(c => c.id === categoryId);
@@ -361,6 +527,100 @@ export default {
 .customer-avatar-info .info-value {
   font-size: 1rem;
   color: #F0F8FF;
+}
+
+/* Стили для секции действий */
+.action-section {
+  margin-top: 40px;
+  padding-top: 40px;
+  border-top: 2px solid rgba(168, 209, 255, 0.2);
+  text-align: center;
+}
+
+.respond-button {
+  padding: 18px 50px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.3), rgba(46, 204, 113, 0.3));
+  border: 2px solid rgba(46, 204, 113, 0.4);
+  border-radius: 9999px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 280px;
+  position: relative;
+  overflow: hidden;
+}
+
+.respond-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(39, 174, 96, 0.5), rgba(46, 204, 113, 0.5));
+  border-color: rgba(46, 204, 113, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(46, 204, 113, 0.3);
+}
+
+.respond-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.respond-button .button-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.respond-button .button-glow {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+  transition: 0.8s;
+}
+
+.respond-button:hover:not(:disabled) .button-glow {
+  left: 100%;
+}
+
+.respond-message {
+  margin-top: 20px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.respond-message.success {
+  background: rgba(46, 204, 113, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  color: #2ecc71;
+}
+
+.respond-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #e74c3c;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Остальные стили остаются без изменений */
@@ -564,10 +824,6 @@ export default {
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .customer-not-found {
   padding: 30px;
   background: rgba(10, 77, 140, 0.1);
@@ -638,6 +894,13 @@ export default {
   .customer-phone,
   .customer-avatar-info {
     justify-content: center;
+  }
+  
+  .respond-button {
+    width: 100%;
+    min-width: auto;
+    padding: 15px 30px;
+    font-size: 1.1rem;
   }
 }
 

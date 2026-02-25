@@ -28,9 +28,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     
     Route::post('/logout', function (Request $request) {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json(['success' => true]);
-    });
+    // Удаляем все токены пользователя
+    if ($request->user()) {
+        $request->user()->tokens()->delete();
+        
+        // Если используете сессии
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+    }
+    
+    return response()->json(['success' => true, 'message' => 'Выход выполнен']);
+})->middleware('auth:sanctum');
 });
 Route::post('/login', [LoginController::class, 'login'])
     ->middleware([\Illuminate\Session\Middleware\StartSession::class]);
@@ -39,6 +48,7 @@ Route::post('/registred',[RegisterController::class,'registred']);
 
 //Users
 Route::get('/users',[UserController::class,'index']);
+Route::post('/users/add',[RegisterController::class,'registred']);
 Route::get('/users/{id}',[UserController::class,'show']);
 Route::post('/users/edit',[UserController::class,'update']);
 Route::get('/users/destroy/{user}',[UserController::class,'destroy']);
@@ -49,6 +59,7 @@ Route::post('/projects/add',[ProjectController::class,'store']);
 Route::post('/projects/edit',[ProjectController::class,'update']);
 Route::get('/projects/{project}',[ProjectController::class,'show']);
 Route::get('projects/destroy/{project}',[ProjectController::class,'destroy']);
+Route::get('/my-projects/{user}', [ProjectController::class, 'myProjects']);
 
 //Categories
 Route::get('/categories',[CategoryController::class,'index']);

@@ -11,6 +11,16 @@
           <router-link to="/freelancer" class="nav-link" :class="{ active: $route.path === '/freelancer' }">Фрилансеры</router-link>
           <router-link to="/projects" class="nav-link" :class="{ active: $route.path === '/projects' }">Заказы</router-link>
           
+          <!-- Мои проекты для заказчиков и фрилансеров -->
+          <router-link 
+            v-if="user && (user.role === 'customer' || user.role === 'freelancer' || user.role === 'заказчик' || user.role === 'фрилансер')" 
+            to="/my-projects" 
+            class="nav-link" 
+            :class="{ active: $route.path === '/my-projects' }"
+          >
+            Мои проекты
+          </router-link>
+          
           <!-- Админ панель только для админов -->
           <router-link v-if="user?.role === 'admin'" to="/admin" class="nav-link" :class="{ active: $route.path.startsWith('/admin') }">
             Админ панель
@@ -150,9 +160,17 @@ const getRoleText = (role) => {
   const roles = {
     'freelancer': 'Фрилансер',
     'customer': 'Заказчик',
-    'admin': 'Админ'
+    'admin': 'Админ',
+    'фрилансер': 'Фрилансер',
+    'заказчик': 'Заказчик'
   }
   return roles[role] || role
+}
+
+// Мобильное меню
+const toggleMobileMenu = () => {
+  // Здесь можно добавить логику для мобильного меню
+  console.log('Toggle mobile menu')
 }
 
 onMounted(() => {
@@ -372,6 +390,19 @@ onMounted(() => {
     padding: 8px 16px;
     font-size: 1rem;
   }
+  
+  .nav-actions {
+    gap: 12px;
+  }
+  
+  .nav-button {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+  }
+  
+  .user-name {
+    max-width: 100px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -390,6 +421,29 @@ onMounted(() => {
 
   .logo-text {
     font-size: 1.5rem;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .user-info {
+    padding: 4px 8px;
+  }
+  
+  .user-avatar,
+  .user-avatar-placeholder {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .user-name {
+    max-width: 80px;
+    font-size: 0.85rem;
   }
 }
 </style>
