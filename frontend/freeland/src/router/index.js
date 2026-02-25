@@ -9,6 +9,7 @@ import ProjectDetail from '@/components/ProjectDetail.vue'
 import FreelancersPage from '@/components/FreelancersPage.vue'
 import UserDetail from '@/components/UserDetail.vue'
 import AdminPage from '@/components/AdminPage.vue'
+import ProfilPage from '@/components/ProfilPage.vue'
 import MyProjects from '@/components/MyProjects.vue'
 
 const routes = [
@@ -42,6 +43,9 @@ const routes = [
   },{
     path: '/my-projects',
     component: MyProjects
+  },{
+    path: '/profile',
+    component: ProfilPage
   }
 ]
 

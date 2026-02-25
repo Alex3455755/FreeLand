@@ -11,6 +11,7 @@ use App\Http\COntrollers\CommentController;
 use App\Http\COntrollers\PaymentController;
 use App\Http\COntrollers\AuthController;
 use App\Http\COntrollers\MessageController;
+use App\Http\COntrollers\ProfileController;
 
 
 
@@ -84,3 +85,14 @@ Route::get('/messages',[MessageController::class,'index']);
 Route::post('/messages/add',[MessageController::class,'store']);
 Route::post('/messages/edit',[MessageController::class,'update']);
 Route::get('/messages/destroy/{payment}',[MessageController::class,'destroy']);
+
+
+Route::middleware('auth:sanctum')->group(function () {
+    // Профиль
+    Route::get('/profil/{user}', [ProfileController::class, 'index']);
+    Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::post('/profile/deposit', [ProfileController::class, 'deposit']);
+    Route::post('/profile/withdraw', [ProfileController::class, 'withdraw']);
+    Route::post('/profile/send-money/{user}', [ProfileController::class, 'sendMoney']);
+    Route::get('/profile/payments', [ProfileController::class, 'payments']);
+});

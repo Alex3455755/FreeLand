@@ -40,19 +40,21 @@
 
         <!-- АВТОРИЗОВАН -->
         <div v-else class="nav-actions">
-          <!-- Аватар/имя пользователя -->
-          <div class="user-info">
-            <img 
-              v-if="user.avatar" 
-              :src="user.avatar" 
-              :alt="user.full_name" 
-              class="user-avatar"
-            />
-            <span v-else class="user-avatar-placeholder">
-              {{ getInitials(user.full_name) }}
-            </span>
-            <span class="user-name">{{ user.full_name || user.login }}</span>
-          </div>
+          <!-- Аватар/имя пользователя с ссылкой на профиль -->
+          <router-link to="/profile" class="user-info-link">
+            <div class="user-info">
+              <img 
+                v-if="user.avatar" 
+                :src="user.avatar" 
+                :alt="user.full_name" 
+                class="user-avatar"
+              />
+              <span v-else class="user-avatar-placeholder">
+                {{ getInitials(user.full_name) }}
+              </span>
+              <span class="user-name">{{ user.full_name || user.login }}</span>
+            </div>
+          </router-link>
           
           <!-- Роль (не для админа) -->
           <span v-if="user.role !== 'admin'" class="user-role">
@@ -246,6 +248,66 @@ onMounted(() => {
   align-items: center;
 }
 
+/* Стили для ссылки на профиль */
+.user-info-link {
+  text-decoration: none;
+  transition: transform 0.3s ease;
+}
+
+.user-info-link:hover {
+  transform: translateY(-2px);
+}
+
+.user-info-link:hover .user-info {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(168, 209, 255, 0.3);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.user-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(168, 209, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  border: 2px solid rgba(255,255,255,0.3);
+}
+
+.user-name {
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.95rem;
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .nav-button {
   padding: 12px 28px;
   border: none;
@@ -296,48 +358,6 @@ onMounted(() => {
   background: rgba(255, 107, 107, 0.4);
   border-color: rgba(255, 107, 107, 0.6);
   color: #FFFFFF;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255,255,255,0.1);
-  padding: 8px 16px;
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
-}
-
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(255,255,255,0.3);
-}
-
-.user-avatar-placeholder {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(168, 209, 255, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #FFFFFF;
-  border: 2px solid rgba(255,255,255,0.3);
-}
-
-.user-name {
-  color: #FFFFFF;
-  font-weight: 600;
-  font-size: 0.95rem;
-  max-width: 150px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .user-role {
