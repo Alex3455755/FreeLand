@@ -516,9 +516,51 @@ export default {
   created() {
     this.fetchAllData();
     this.initParticles();
+  this.checkAdminAccess();
+  this.fetchAllData();
+  this.initParticles();
   },
   
   methods: {
+    async checkAdminAccess() {
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      // Нет токена → на логин
+      this.$router.push('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/user`, {
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem('token');
+        this.$router.push('/login');
+        return;
+      }
+
+      const data = await response.json();
+
+      if (!data.success || !data.user || data.user.role !== 'admin') {
+        // Не админ → перенаправляем на главную или показываем ошибку
+        this.$router.push('/');
+        // Или можно показать уведомление:
+        // this.showNotification('Доступ запрещён. Только для администраторов', 'error');
+      }
+      
+      // Если всё ок — продолжаем загрузку данных
+    } catch (error) {
+      console.error('Ошибка проверки доступа:', error);
+      localStorage.removeItem('token');
+      this.$router.push('/login');
+    }
+  },
     async fetchAllData() {
       this.loading = true;
       try {

@@ -638,6 +638,105 @@ body {
   line-height: 1.7;
 }
 
+
+.benefits {
+  padding: 120px 0 140px;
+  position: relative;
+  z-index: 20;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.benefit-card {
+  padding: 50px 35px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s ease;
+  border-radius: 32px;
+}
+
+.benefit-card:hover {
+  transform: translateY(-12px);
+  box-shadow: 0 30px 70px rgba(8, 51, 88, 0.55);
+}
+
+/* Обёртка иконки */
+.icon-wrapper {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Свечение за иконкой */
+.icon-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(168, 209, 255, 0.45), transparent 70%);
+  filter: blur(18px);
+  opacity: 0.7;
+  transition: opacity 0.5s ease;
+}
+
+.benefit-card:hover .icon-glow {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* Сама иконка */
+.benefit-icon {
+  font-size: 4.2rem;              /* крупнее, чтобы было заметно */
+  line-height: 1;
+  position: relative;
+  z-index: 2;
+  background: linear-gradient(135deg, #A8D1FF, #6BB2F0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 6px 16px rgba(168, 209, 255, 0.5));
+  transition: transform 0.4s ease;
+}
+
+.benefit-card:hover .benefit-icon {
+  transform: scale(1.12) rotate(5deg);
+}
+
+/* Заголовок и текст */
+.benefit-title {
+  font-size: 1.65rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  text-shadow: 0 2px 12px rgba(168, 209, 255, 0.25);
+}
+
+.benefit-desc {
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  opacity: 0.92;
+}
+
+/* Эффекты при наведении (уже есть в твоём коде — просто усилим) */
+.benefit-card:hover .card-shine {
+  opacity: 0.7;
+}
+
+.benefit-card:hover .card-glow {
+  opacity: 0.6;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .hero-banner {

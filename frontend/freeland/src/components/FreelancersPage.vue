@@ -42,12 +42,6 @@
           </div>
           
           <div class="filter-group">
-            <select v-model="selectedCategory" class="filter-select ios-glass">
-              <option value="">Все категории</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
             
             <select v-model="sortBy" class="filter-select ios-glass">
               <option value="rating_desc">По рейтингу (высокий)</option>
@@ -100,67 +94,14 @@
               @{{ freelancer.login }}
             </div>
             
-            <!-- Специализация (если есть) -->
-            <div class="specialization" v-if="freelancer.specialization">
-              {{ freelancer.specialization }}
-            </div>
-            
-            <!-- Категории (если есть) -->
-            <div class="categories" v-if="freelancer.categories && freelancer.categories.length">
-              <span 
-                v-for="category in freelancer.categories.slice(0, 3)" 
-                :key="category.id"
-                class="category-tag"
-              >
-                {{ category.name }}
-              </span>
-              <span v-if="freelancer.categories.length > 3" class="category-tag more">
-                +{{ freelancer.categories.length - 3 }}
-              </span>
-            </div>
-            
             <!-- Статистика -->
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-value">{{ freelancer.completed_projects || 0 }}</span>
-                <span class="stat-label">Проектов</span>
-              </div>
+            <!-- <div class="stats-grid">
               <div class="stat-item">
                 <span class="stat-value">{{ freelancer.rating || '0.0' }}</span>
                 <span class="stat-label">Рейтинг</span>
               </div>
-              <div class="stat-item">
-                <span class="stat-value">{{ freelancer.experience || '0' }}</span>
-                <span class="stat-label">Лет опыта</span>
-              </div>
-            </div>
+            </div> -->
             
-            <!-- Навыки -->
-            <div class="skills" v-if="freelancer.skills && freelancer.skills.length">
-              <span 
-                v-for="skill in freelancer.skills.slice(0, 4)" 
-                :key="skill"
-                class="skill-tag"
-              >
-                {{ skill }}
-              </span>
-              <span v-if="freelancer.skills.length > 4" class="skill-tag more">
-                +{{ freelancer.skills.length - 4 }}
-              </span>
-            </div>
-            
-            <!-- Цена и кнопка -->
-            <div class="freelancer-footer">
-              <div class="price-info">
-                <span class="price-label">От</span>
-                <span class="price-value">{{ formatPrice(freelancer.hourly_rate || freelancer.min_price) }}</span>
-                <span class="price-period">/час</span>
-              </div>
-              
-              <button class="contact-button" @click.stop="contactFreelancer(freelancer.id)">
-                Связаться
-              </button>
-            </div>
           </div>
         </div>
       </div>

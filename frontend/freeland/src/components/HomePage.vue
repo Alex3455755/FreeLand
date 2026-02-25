@@ -93,26 +93,29 @@
 
     <!-- Плюсы фриланса -->
     <section class="benefits">
-      <div class="container">
-        <h3 class="section-title">Почему выбирают наш фриланс</h3>
-        <div class="benefits-grid">
-          <div 
-            v-for="benefit in benefits" 
-            :key="benefit.id"
-            class="benefit-card ios-glass ios-glass-heavy"
-          >
-            <div class="icon-container">
-              <div class="icon-glow"></div>
-              <span class="icon">{{ benefit.icon }}</span>
-            </div>
-            <h4>{{ benefit.title }}</h4>
-            <p>{{ benefit.description }}</p>
-            <div class="card-glow"></div>
-            <div class="card-shine"></div>
-          </div>
+  <div class="container">
+    <h3 class="section-title">Почему выбирают наш фриланс</h3>
+    
+    <div class="benefits-grid">
+      <div
+        v-for="benefit in benefits"
+        :key="benefit.id"
+        class="benefit-card ios-glass ios-glass-heavy"
+      >
+        <div class="icon-wrapper">
+          <div class="icon-glow"></div>
+          <span class="benefit-icon">{{ benefit.icon }}</span>
         </div>
+        
+        <h4 class="benefit-title">{{ benefit.title }}</h4>
+        <p class="benefit-desc">{{ benefit.description }}</p>
+        
+        <div class="card-shine"></div>
+        <div class="card-glow"></div>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
     <!-- Футер -->
     <FooterApp />
@@ -141,8 +144,7 @@ const freelancersLoading = ref(true)
 const benefits = [
   { id: 1, icon: '💰', title: 'Без комиссии', description: 'Первый месяц переводы 0%' },
   { id: 2, icon: '⚡', title: 'Быстрые выплаты', description: 'Деньги в день выполнения заказа' },
-  { id: 3, icon: '🛡️', title: 'Безопасные сделки', description: 'Гарантия возврата средств' },
-  { id: 4, icon: '🌍', title: '1000+ заказов', description: 'Постоянный поток проектов' }
+  { id: 3, icon: '🌍', title: '1000+ заказов', description: 'Постоянный поток проектов' }
 ]
 
 // Текст кнопки в зависимости от авторизации
