@@ -18,7 +18,8 @@
 <style scoped>
 /* Footer */
 .footer {
-  margin-top: auto;
+  margin-top: 40px;
+  flex-shrink: 0;
   padding: 80px 0 50px;
   text-align: center;
   position: relative;

@@ -192,7 +192,7 @@
                 <tr>
                   <th>ID</th>
                   <th>Автор</th>
-                  <th>Проект</th>
+                  <th>Пользователь</th>
                   <th>Рейтинг</th>
                   <th>Комментарий</th>
                   <th>Действия</th>
@@ -201,8 +201,8 @@
               <tbody>
                 <tr v-for="comment in comments" :key="comment.id">
                   <td>{{ comment.id }}</td>
+                  <td>{{ getUserName(comment.author_id) }}</td>
                   <td>{{ getUserName(comment.user_id) }}</td>
-                  <td>{{ getProjectTitle(comment.project_id) }}</td>
                   <td>{{ comment.rating }}</td>
                   <td>{{ truncateText(comment.text, 50) }}</td>
                   <td class="actions">
@@ -235,6 +235,7 @@
                   <th>Коммиссия</th>
                   <th>Сумма</th>
                   <th>Статус</th>
+                  <th>Тип</th>
                   <th>Действия</th>
                 </tr>
               </thead>
@@ -250,6 +251,7 @@
                       {{ payment.status }}
                     </span>
                   </td>
+                  <td>{{ payment.type }}</td>
                   <td class="actions">
                     <button class="action-btn edit" @click="openPaymentModal(payment)">
                       <span class="action-icon">✏️</span>
@@ -369,15 +371,6 @@
                   <option value="">Выберите автора</option>
                   <option v-for="user in users" :key="user.id" :value="user.id">
                     {{ user.full_name || user.login }} (ID: {{ user.id }})
-                  </option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Проект</label>
-                <select v-model="modalData.project_id" class="form-input ios-glass" required>
-                  <option value="">Выберите проект</option>
-                  <option v-for="project in projects" :key="project.id" :value="project.id">
-                    {{ project.title }} (ID: {{ project.id }})
                   </option>
                 </select>
               </div>
@@ -827,6 +820,14 @@ export default {
   flex-direction: column;
   position: relative;
   padding: 40px 0 80px;
+    padding-bottom: 0; 
+}
+
+.container {
+  flex: 1 0 auto;          /* ← ключевой момент */
+  display: flex;
+  flex-direction: column;
+  /* padding: 0 20px; уже есть — можно оставить */
 }
 
 .container {
@@ -1262,7 +1263,7 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 40px 0 80px;
+  padding: 0;
 }
 
 .container {
@@ -1272,6 +1273,9 @@ export default {
   position: relative;
   z-index: 20;
   width: 100%;
+  flex: 1 0 auto;              /* ← КЛЮЧЕВОЕ — заставляет контент растягиваться */
+  display: flex;               /* опционально, но полезно для вложенных элементов */
+  flex-direction: column;
 }
 
 /* Заголовок */

@@ -399,6 +399,13 @@ export default {
   flex-direction: column;
   position: relative;
   padding: 40px 0 80px;
+  padding-bottom: 0; 
+}
+.container {
+  flex: 1 0 auto;          /* ← ключевой момент */
+  display: flex;
+  flex-direction: column;
+  /* padding: 0 20px; уже есть — можно оставить */
 }
 
 .container {

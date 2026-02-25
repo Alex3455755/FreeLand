@@ -795,12 +795,15 @@ export default {
 </script>
 
 <style scoped>
-/* ... все существующие стили ... */
-
-/* Добавляем стили для select */
 .select-wrapper {
   position: relative;
   width: 100%;
+}
+.container {
+  flex: 1 0 auto;          /* ← ключевой момент */
+  display: flex;
+  flex-direction: column;
+  /* padding: 0 20px; уже есть — можно оставить */
 }
 
 .select-wrapper select {
@@ -857,6 +860,7 @@ export default {
   min-height: 100vh;
   padding: 40px 0 80px;
   position: relative;
+    padding-bottom: 0; 
 }
 
 .container {
