@@ -46,7 +46,7 @@
         </div>
         <div v-else class="freelancers-grid">
           <div 
-            v-for="(freelancer,index) in displayedFreelancers" 
+            v-for="(freelancer,index) in displayedFreelancers"
             :key="freelancer.id"
             class="freelancer-card ios-glass ios-glass-heavy"
             @click="openFreelancerProfile(freelancer.id)"
@@ -68,11 +68,6 @@
             <div class="card-glow"></div>
             <div class="card-shine"></div>
           </div>
-        </div>
-        <div v-if="freelancers.length > 4" class="view-all-link">
-          <router-link to="/freelancers" class="view-all-button ios-glass">
-            Все фрилансеры →
-          </router-link>
         </div>
       </div>
     </section>
@@ -152,9 +147,11 @@ const startButtonText = computed(() => {
   return user.value ? 'Перейти к заказам' : 'Начать работу бесплатно'
 })
 
-// Отображаемые фрилансеры (первые 4)
 const displayedFreelancers = computed(() => {
-  return freelancers.value.slice(0, 4)
+  return [...freelancers.value]
+    .filter((elem) => elem.role === 'freelancer')
+    .sort((a, b) => b.rating - a.rating)
+    .slice(0, 3)
 })
 
 // Получение текущего пользователя

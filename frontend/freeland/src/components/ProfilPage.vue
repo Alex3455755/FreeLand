@@ -142,7 +142,7 @@
               />
             </div>
             
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label>Аватар (URL)</label>
               <input 
                 v-model="editForm.avatar" 
@@ -150,7 +150,7 @@
                 class="form-input ios-glass"
                 placeholder="https://example.com/avatar.jpg"
               />
-            </div>
+            </div> -->
             
             <div class="form-group">
               <label>Новый пароль (оставьте пустым, если не хотите менять)</label>

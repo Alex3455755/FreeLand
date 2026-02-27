@@ -3,9 +3,6 @@
     <div class="container">
       <p>&copy; 2026 FreeLand. Все права защищены.</p>
       <div class="footer-links">
-        <a href="#" class="ios-glass-link">Помощь</a>
-        <a href="#" class="ios-glass-link">Контакты</a>
-        <a href="#" class="ios-glass-link">Политика</a>
       </div>
     </div>
   </footer>

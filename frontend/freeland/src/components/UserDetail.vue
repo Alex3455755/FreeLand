@@ -161,25 +161,6 @@
               </div>
             </div>
 
-            <!-- Цены (для фрилансеров) -->
-            <div class="details-card ios-glass" v-if="isFreelancer">
-              <h3 class="card-title">Цены</h3>
-              <div class="pricing-info">
-                <div class="price-item" v-if="user.hourly_rate">
-                  <span class="price-label">Почасовая ставка:</span>
-                  <span class="price-value">{{ formatPrice(user.hourly_rate) }} ₽/час</span>
-                </div>
-                <div class="price-item" v-if="user.min_price">
-                  <span class="price-label">Минимальная цена:</span>
-                  <span class="price-value">{{ formatPrice(user.min_price) }} ₽</span>
-                </div>
-                <div class="price-item" v-if="user.max_price">
-                  <span class="price-label">Максимальная цена:</span>
-                  <span class="price-value">{{ formatPrice(user.max_price) }} ₽</span>
-                </div>
-              </div>
-            </div>
-
             <!-- Языки -->
             <div class="details-card ios-glass" v-if="user.languages && user.languages.length">
               <h3 class="card-title">Языки</h3>
@@ -835,9 +816,9 @@ export default {
       }
     },
     
-    showNotification(message) {
+    showNotification() {
       // Здесь можно добавить красивые toast-уведомления
-      alert(message);
+      return;
     }
   },
   

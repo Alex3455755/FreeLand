@@ -22,10 +22,10 @@
           <input v-model="form.login" type="text" required />
         </div>
 
-        <div class="form-group">
+        <!-- <div class="form-group">
           <label>Аватар (URL)</label>
           <input v-model="form.avatar" type="text" placeholder="https://..." />
-        </div>
+        </div> -->
 
         <div class="form-group">
           <label>Пароль</label>

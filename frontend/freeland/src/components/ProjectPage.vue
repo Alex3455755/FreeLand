@@ -683,6 +683,32 @@ export default {
   width: 100%;
 }
 
+.icon-wrapper {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0 auto 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Свечение за иконкой */
+.icon-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(168, 209, 255, 0.45), transparent 70%);
+  filter: blur(18px);
+  opacity: 0.7;
+  transition: opacity 0.5s ease;
+}
+
+.benefit-card:hover .icon-glow {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
 .container {
   flex: 1 0 auto;          /* ← ключевой момент */
   display: flex;
