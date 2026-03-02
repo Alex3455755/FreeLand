@@ -12,6 +12,8 @@ use App\Http\COntrollers\PaymentController;
 use App\Http\COntrollers\AuthController;
 use App\Http\COntrollers\MessageController;
 use App\Http\COntrollers\ProfileController;
+use App\Http\Controllers\ReviewController;
+
 
 
 
@@ -96,4 +98,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/withdraw', [ProfileController::class, 'withdraw']);
     Route::post('/profile/send-money/{user}', [ProfileController::class, 'sendMoney']);
     Route::get('/profile/payments', [ProfileController::class, 'payments']);
+});
+
+
+Route::get('/reviews', [ReviewController::class, 'index']);
+Route::post('/reviews', [ReviewController::class, 'store']);
+Route::get('/reviews/latest', [ReviewController::class, 'getLatest']);
+Route::get('/reviews/{id}', [ReviewController::class, 'show']);
+
+// Маршруты для администратора (с middleware auth и admin)
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/admin/reviews/pending', [ReviewController::class, 'getPending']);
+    Route::get('/admin/reviews/stats', [ReviewController::class, 'getStats']);
+    Route::post('/admin/reviews/search', [ReviewController::class, 'search']);
+    Route::put('/admin/reviews/{id}', [ReviewController::class, 'update']);
+    Route::delete('/admin/reviews/{id}', [ReviewController::class, 'destroy']);
+    Route::patch('/admin/reviews/{id}/approve', [ReviewController::class, 'approve']);
+    Route::patch('/admin/reviews/{id}/reject', [ReviewController::class, 'reject']);
 });

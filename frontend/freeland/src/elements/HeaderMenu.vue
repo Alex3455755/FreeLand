@@ -10,6 +10,7 @@
           <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">Главная</router-link>
           <router-link to="/freelancer" class="nav-link" :class="{ active: $route.path === '/freelancer' }">Фрилансеры</router-link>
           <router-link to="/projects" class="nav-link" :class="{ active: $route.path === '/projects' }">Заказы</router-link>
+          <router-link to="/emploee" class="nav-link" :class="{ active: $route.path === '/emploee' }">Сотрудники</router-link>
           
           <!-- Мои проекты для заказчиков и фрилансеров -->
           <router-link 

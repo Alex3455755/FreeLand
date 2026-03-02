@@ -11,6 +11,8 @@ import UserDetail from '@/components/UserDetail.vue'
 import AdminPage from '@/components/AdminPage.vue'
 import ProfilPage from '@/components/ProfilPage.vue'
 import MyProjects from '@/components/MyProjects.vue'
+import EmploeyPage from '@/components/EmploeyPage.vue'
+import NotFound from '@/components/NotFound.vue'
 
 const routes = [
     { path: '/', component: HomePage },
@@ -46,6 +48,13 @@ const routes = [
   },{
     path: '/profile',
     component: ProfilPage
+  },{
+    path: '/emploee',
+    component: EmploeyPage
+  },{
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFound
   }
 ]
 
