@@ -73,18 +73,88 @@
     </section>
 
     <!-- Начать работу -->
-    <section class="start-work">
-      <div class="container">
-        <div class="start-content ios-glass ios-glass-heavy">
-          <h3>Начните зарабатывать уже сегодня</h3>
-          <p>Зарегистрируйтесь и получите первые заказы в течение 24 часов</p>
-          <button @click="handleStartButton" class="cta-button ios-glass ios-glass-heavy">
-            <span class="button-text">{{ startButtonText }}</span>
-            <span class="button-glow"></span>
-          </button>
+    <section class="info-articles">
+  <div class="container">
+    <h2 class="section-title">Полезные статьи</h2>
+    
+    <div class="articles-grid">
+      <!-- Основная статья (первая, более крупная) -->
+      <article class="article-card article-card-featured ios-glass ios-glass-heavy">
+        <div class="article-content">
+          <div class="article-meta">
+            <span class="article-category">Для новичков</span>
+            <span class="article-date">15 марта 2024</span>
+          </div>
+          <h3 class="article-title">
+            <router-link to="/article" class="article-link">
+              Легкие проекты фриланс для новичков без портфолио
+              <span class="link-arrow">→</span>
+            </router-link>
+          </h3>
+          <p class="article-excerpt">
+            С чего начать карьеру фрилансера, если у вас нет опыта и примеров работ? 
+            Топ-10 проектов, которые не требуют портфолио и приносят первый доход.
+          </p>
+          <div class="article-stats">
+            <span class="stat">5 мин чтения</span>
+            <span class="stat">2.5K просмотров</span>
+          </div>
         </div>
-      </div>
-    </section>
+        <div class="card-shine"></div>
+        <div class="card-glow"></div>
+      </article>
+
+      <!-- Дополнительные статьи (для расширения блока) -->
+      <article class="article-card ios-glass">
+        <div class="article-content">
+          <div class="article-meta">
+            <span class="article-category">Советы</span>
+            <span class="article-date">10 марта 2024</span>
+          </div>
+          <h4 class="article-title">
+            <a href="#" class="article-link">
+              Как поднять рейтинг на биржах фриланса
+              <span class="link-arrow">→</span>
+            </a>
+          </h4>
+          <p class="article-excerpt">
+            Проверенные стратегии для быстрого роста рейтинга и получения первых заказов.
+          </p>
+          <div class="article-stats">
+            <span class="stat">4 мин чтения</span>
+            <span class="stat">1.8K просмотров</span>
+          </div>
+        </div>
+        <div class="card-shine"></div>
+        <div class="card-glow"></div>
+      </article>
+
+      <article class="article-card ios-glass">
+        <div class="article-content">
+          <div class="article-meta">
+            <span class="article-category">Инструменты</span>
+            <span class="article-date">5 марта 2024</span>
+          </div>
+          <h4 class="article-title">
+            <a href="#" class="article-link">
+              Топ-10 бесплатных инструментов для фрилансера
+              <span class="link-arrow">→</span>
+            </a>
+          </h4>
+          <p class="article-excerpt">
+            Сервисы и программы, которые помогут работать эффективнее и профессиональнее.
+          </p>
+          <div class="article-stats">
+            <span class="stat">6 мин чтения</span>
+            <span class="stat">3.2K просмотров</span>
+          </div>
+        </div>
+        <div class="card-shine"></div>
+        <div class="card-glow"></div>
+      </article>
+    </div>
+  </div>
+</section>
 
     <!-- Плюсы фриланса -->
     <section class="benefits">

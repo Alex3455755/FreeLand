@@ -13,6 +13,7 @@ import ProfilPage from '@/components/ProfilPage.vue'
 import MyProjects from '@/components/MyProjects.vue'
 import EmploeyPage from '@/components/EmploeyPage.vue'
 import NotFound from '@/components/NotFound.vue'
+import StatePage from '@/components/StatePage.vue'
 
 const routes = [
     { path: '/', component: HomePage },
@@ -52,6 +53,11 @@ const routes = [
     path: '/emploee',
     component: EmploeyPage
   },{
+    path: '/article',
+    name: 'ArticlePage',
+    component: StatePage,
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFound
