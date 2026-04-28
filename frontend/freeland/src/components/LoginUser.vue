@@ -1,6 +1,6 @@
 <template>
-  <div class="login-container">
-    <div class="login-card ios-glass ios-glass-heavy">
+  <div class="modal-overlay login-page">
+    <div class="modal-content login-card ios-glass ios-glass-heavy">
       <h2 class="login-title">Вход в аккаунт</h2>
       
       <!-- Форма авторизации -->
@@ -167,19 +167,26 @@ if (savedLogin) {
 </script>
 
 <style scoped>
-.login-container {
-  min-height: 100vh;
+.login-page {
   display: flex;
-  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
   justify-content: center;
+  align-items: center;
   padding: 20px;
-  position: relative;
-  z-index: 10;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .login-card {
-  width: 100%;
-  max-width: 450px;
   padding: 50px 40px;
   background: rgba(10, 77, 140, 0.15);
   backdrop-filter: blur(25px) saturate(180%);

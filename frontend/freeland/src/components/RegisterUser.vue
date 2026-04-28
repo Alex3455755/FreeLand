@@ -1,6 +1,6 @@
 <template>
-  <section class="register-page">
-    <div class="register-card ios-glass ios-glass-heavy">
+  <div class="modal-overlay register-page">
+    <div class="modal-content register-card ios-glass ios-glass-heavy">
 
       <h2 class="form-title">Регистрация</h2>
       <p class="form-subtitle">Создайте аккаунт на FreeLand</p>
@@ -56,7 +56,7 @@
       </div>
 
     </div>
-  </section>
+  </div>
 </template>
 
 <script setup>
@@ -152,48 +152,53 @@ const handleRegister = async () => {
 
 <style scoped>
 .register-page {
-  min-height: 100vh;
   display: flex;
-  align-items: center;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
   justify-content: center;
-  padding: 40px 20px;
-  background: radial-gradient(
-    circle at top center,
-    rgba(168, 209, 255, 0.08),
-    transparent 60%
-  );
+  align-items: center;
+  padding: 20px;
+}
+
+.modal-content {
+  width: 90%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .register-card {
-  width: 100%;
-  max-width: 900px;
-  padding: 70px 60px;
-  border-radius: 28px;
+  padding: 50px 40px;
+  border-radius: 32px;
   text-align: center;
-  background: rgba(10, 25, 45, 0.7);
-  backdrop-filter: blur(20px);
+  background: rgba(10, 77, 140, 0.15);
+  backdrop-filter: blur(25px) saturate(180%);
   border: 1px solid rgba(168, 209, 255, 0.2);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
 }
 
 .form-title {
-  font-size: 2.6rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   color: #FFFFFF;
-  text-shadow: 0 4px 30px rgba(168, 209, 255, 0.35);
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
 }
 
 .form-subtitle {
   color: #F0F8FF;
-  margin-bottom: 45px;
+  margin-bottom: 30px;
   opacity: 0.8;
+  font-size: 0.95rem;
 }
 
 .form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 25px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .form-group {
@@ -204,31 +209,29 @@ const handleRegister = async () => {
 }
 
 .form-group label {
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #F0F8FF;
-  opacity: 0.9;
   font-weight: 500;
+  margin-left: 5px;
 }
 
 .form-group input,
 .form-group select {
   padding: 15px 20px;
-  border-radius: 18px;
-  border: 1px solid rgba(168, 209, 255, 0.25);
-  background: rgba(10, 77, 140, 0.25);
-  backdrop-filter: blur(14px);
+  border-radius: 16px;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  background: rgba(10, 77, 140, 0.2);
   color: #FFFFFF;
   font-size: 1rem;
-  transition: 0.3s ease;
+  transition: all 0.3s ease;
   width: 100%;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: rgba(168, 209, 255, 0.6);
-  box-shadow: 0 0 25px rgba(168, 209, 255, 0.4);
-  background: rgba(10, 77, 140, 0.35);
+  border-color: rgba(168, 209, 255, 0.5);
+  box-shadow: 0 0 20px rgba(168, 209, 255, 0.2);
 }
 
 .form-group input::placeholder {
@@ -241,21 +244,21 @@ const handleRegister = async () => {
 }
 
 .form-full {
-  grid-column: span 2;
+  margin-top: 8px;
 }
 
 .submit-button {
   width: 100%;
   position: relative;
-  padding: 18px;
+  padding: 16px;
   border-radius: 9999px;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 600;
-  border: 1px solid rgba(168, 209, 255, 0.35);
-  background: linear-gradient(135deg, rgba(10, 77, 140, 0.6), rgba(26, 107, 179, 0.6));
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  background: rgba(10, 77, 140, 0.4);
   cursor: pointer;
   overflow: hidden;
-  transition: 0.3s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -265,10 +268,9 @@ const handleRegister = async () => {
 }
 
 .submit-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(10, 77, 140, 0.8), rgba(26, 107, 179, 0.8));
-  border-color: rgba(168, 209, 255, 0.6);
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(10, 77, 140, 0.3);
+  background: rgba(10, 77, 140, 0.6);
+  border-color: rgba(168, 209, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .submit-button:disabled {
@@ -316,11 +318,13 @@ const handleRegister = async () => {
 }
 
 .form-message {
-  margin-top: 25px;
+  margin-top: 20px;
   padding: 15px 20px;
   border-radius: 12px;
   font-size: 0.95rem;
-  text-align: left;
+  text-align: center;
+  white-space: pre-line;
+  line-height: 1.4;
 }
 
 .form-message.success {
@@ -344,25 +348,17 @@ const handleRegister = async () => {
 /* 📱 Мобильная версия */
 @media (max-width: 768px) {
   .register-card {
-    padding: 50px 25px;
+    padding: 40px 24px;
   }
 
   .form-title {
-    font-size: 2rem;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-full {
-    grid-column: span 1;
+    font-size: 1.9rem;
   }
 }
 
 @media (max-width: 480px) {
   .register-card {
-    padding: 30px 20px;
+    padding: 36px 20px;
   }
 
   .form-title {

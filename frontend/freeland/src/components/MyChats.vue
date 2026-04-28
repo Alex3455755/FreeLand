@@ -1,5 +1,13 @@
 <template>
   <div class="my-chats-page">
+    <div class="dynamic-background">
+      <div class="gradient-sphere sphere-1"></div>
+      <div class="gradient-sphere sphere-2"></div>
+      <div class="gradient-sphere sphere-3"></div>
+      <div class="grid-overlay"></div>
+      <div class="noise-overlay"></div>
+    </div>
+
     <HeaderMenu />
 
     <div class="container">
@@ -332,8 +340,8 @@ export default {
 </script>
 
 <style scoped>
-.my-chats-page { min-height: 100vh; }
-.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.my-chats-page { min-height: 100vh; position: relative; padding: 40px 0 80px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 20; }
 .page-header { padding: 24px; margin-bottom: 20px; text-align: center; }
 .page-title { color: #fff; margin: 0; }
 .page-subtitle { color: #f0f8ff; opacity: 0.85; margin-top: 8px; }
@@ -355,6 +363,39 @@ export default {
 .chat-input { flex: 1; border-radius: 12px; border: 1px solid rgba(168,209,255,0.3); background: rgba(10,77,140,0.2); color: #fff; padding: 10px; resize: none; }
 .send-btn { border: 1px solid rgba(168,209,255,0.4); background: rgba(10,77,140,0.6); color: #fff; border-radius: 9999px; padding: 0 16px; cursor: pointer; }
 .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.dynamic-background {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.gradient-sphere {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.25;
+}
+
+.sphere-1 { width: 460px; height: 460px; background: #1a6bb3; top: -140px; left: -80px; }
+.sphere-2 { width: 520px; height: 520px; background: #0a4d8c; top: 25%; right: -180px; }
+.sphere-3 { width: 420px; height: 420px; background: #2a7bc3; bottom: -140px; left: 30%; }
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(168, 209, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(168, 209, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.02), transparent 60%);
+}
+
 @media (max-width: 900px) {
   .chat-layout { grid-template-columns: 1fr; }
 }
