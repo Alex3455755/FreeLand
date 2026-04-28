@@ -40,7 +40,7 @@
             :class="{ active: activeTab === 'projects' }"
             @click="activeTab = 'projects'"
           >
-            📋 Проекты
+            Проекты
           </button>
         </div>
 
@@ -72,17 +72,14 @@
 
               <div class="project-meta">
                 <div class="meta-item">
-                  <span class="meta-icon">💰</span>
                   <span class="meta-value">{{ formatBudget(project.budget) }}</span>
                 </div>
                 
                 <div class="meta-item" v-if="project.deadline">
-                  <span class="meta-icon">⏰</span>
                   <span class="meta-value">{{ formatDate(project.deadline) }}</span>
                 </div>
                 
                 <div class="meta-item">
-                  <span class="meta-icon">📁</span>
                   <span class="meta-value">{{ getCategoryName(project.category_id) }}</span>
                 </div>
               </div>
@@ -119,7 +116,7 @@
                     @click="openChat(project)"
                     class="action-button chat-button"
                   >
-                    💬 Чат
+                    Чат
                   </button>
 
                   <!-- Кнопка редактирования (только для заказчика и если проект открыт) -->
@@ -128,7 +125,7 @@
                     @click="editProject(project)"
                     class="action-button edit-button"
                   >
-                    ✏️ Редактировать
+                    Редактировать
                   </button>
 
                   <!-- Кнопка просмотра -->
@@ -136,7 +133,7 @@
                     @click="viewProject(project.id)"
                     class="action-button view-button"
                   >
-                    👁️ Просмотр
+                   Просмотр
                   </button>
                 </div>
               </div>
@@ -145,7 +142,6 @@
 
           <!-- Пустое состояние проектов -->
           <div v-else class="empty-state ios-glass">
-            <div class="empty-icon">📋</div>
             <h3 class="empty-title">У вас пока нет проектов</h3>
             <p class="empty-text">
               {{ isCustomer ? 'Создайте свой первый проект' : 'Откликнитесь на интересный проект' }}
@@ -204,7 +200,6 @@
           </div>
 
           <div v-else class="empty-state ios-glass">
-            <div class="empty-icon">💬</div>
             <h3 class="empty-title">Нет активных чатов</h3>
             <p class="empty-text">Начните общение, когда у проекта появится исполнитель</p>
           </div>
@@ -213,7 +208,6 @@
 
       <!-- Если пользователь не авторизован -->
       <div v-else class="empty-state ios-glass">
-        <div class="empty-icon">🔒</div>
         <h3 class="empty-title">Требуется авторизация</h3>
         <p class="empty-text">Войдите в систему, чтобы просматривать свои проекты</p>
         <button @click="goToLogin" class="action-button primary">

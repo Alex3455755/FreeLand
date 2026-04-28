@@ -62,14 +62,12 @@
             </div>
 
             <div class="profile-location" v-if="user.city || user.country">
-              <span class="info-icon">📍</span>
               {{ user.city }}{{ user.city && user.country ? ', ' : '' }}{{ user.country }}
             </div>
 
             <!-- Кнопки действий -->
             <div class="action-buttons">
               <button v-if="canLeaveReview" class="action-button secondary ios-glass" @click="openReviewModal">
-                <span class="button-icon">✍️</span>
                 Оставить отзыв
               </button>
             </div>
@@ -107,6 +105,28 @@
                 </div>
               </div>
             </div>
+
+                        <div class="details-card ios-glass">
+              <h3 class="card-title">Контакты</h3>
+              <div class="contact-info">
+                <div class="contact-item" v-if="user.email">>
+                  <span class="contact-label">Email:</span>
+                  <a :href="'mailto:' + user.email" class="contact-value">{{ user.email }}</a>
+                </div>
+                <div class="contact-item" v-if="user.phone">
+                  <span class="contact-label">Телефон:</span>
+                  <a :href="'tel:' + user.phone" class="contact-value">{{ user.phone }}</a>
+                </div>
+                <div class="contact-item" v-if="user.telegram">>
+                  <span class="contact-label">Telegram:</span>
+                  <a :href="'https://t.me/' + user.telegram" target="_blank" class="contact-value">@{{ user.telegram }}</a>
+                </div>
+                <div class="contact-item" v-if="user.github">
+                  <span class="contact-label">GitHub:</span>
+                  <a :href="user.github" target="_blank" class="contact-value">{{ user.github }}</a>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Правая колонка -->
@@ -130,33 +150,6 @@
                 <div class="stat-item">
                   <span class="stat-value">{{ user.registered_days || 0 }}</span>
                   <span class="stat-label">Дней на сайте</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Контактная информация -->
-            <div class="details-card ios-glass">
-              <h3 class="card-title">Контакты</h3>
-              <div class="contact-info">
-                <div class="contact-item" v-if="user.email">
-                  <span class="contact-icon">📧</span>
-                  <span class="contact-label">Email:</span>
-                  <a :href="'mailto:' + user.email" class="contact-value">{{ user.email }}</a>
-                </div>
-                <div class="contact-item" v-if="user.phone">
-                  <span class="contact-icon">📞</span>
-                  <span class="contact-label">Телефон:</span>
-                  <a :href="'tel:' + user.phone" class="contact-value">{{ user.phone }}</a>
-                </div>
-                <div class="contact-item" v-if="user.telegram">
-                  <span class="contact-icon">✈️</span>
-                  <span class="contact-label">Telegram:</span>
-                  <a :href="'https://t.me/' + user.telegram" target="_blank" class="contact-value">@{{ user.telegram }}</a>
-                </div>
-                <div class="contact-item" v-if="user.github">
-                  <span class="contact-icon">🐙</span>
-                  <span class="contact-label">GitHub:</span>
-                  <a :href="user.github" target="_blank" class="contact-value">{{ user.github }}</a>
                 </div>
               </div>
             </div>
@@ -300,21 +293,17 @@
         </form>
       </div>
     </div>
-
-    <FooterApp />
   </div>
 </template>
 
 <script>
-import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
 
 export default {
   name: 'UserDetail',
   
   components: {
-    HeaderMenu,
-    FooterApp
+    HeaderMenu
   },
   
   data() {

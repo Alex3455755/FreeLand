@@ -10,8 +10,8 @@ class Message extends Model
     use HasFactory;
 
     protected $fillable = [
+        'chat_id',
         'author_id',
-        'project_id',
         'text',
         'time',
     ];
@@ -20,15 +20,15 @@ class Message extends Model
         'time' => 'datetime',
     ];
 
-    // Связи
+    // ===== Связи =====
+
+    public function chat()
+    {
+        return $this->belongsTo(Chat::class);
+    }
+
     public function author()
     {
         return $this->belongsTo(User::class, 'author_id');
     }
-
-    public function project()
-    {
-        return $this->belongsTo(Project::class);
-    }
-
 }

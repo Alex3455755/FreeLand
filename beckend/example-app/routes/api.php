@@ -13,6 +13,8 @@ use App\Http\COntrollers\AuthController;
 use App\Http\COntrollers\MessageController;
 use App\Http\COntrollers\ProfileController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ApplicationController;
 
 
 
@@ -115,4 +117,38 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/admin/reviews/{id}', [ReviewController::class, 'destroy']);
     Route::patch('/admin/reviews/{id}/approve', [ReviewController::class, 'approve']);
     Route::patch('/admin/reviews/{id}/reject', [ReviewController::class, 'reject']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Чаты
+    Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'store']);
+    Route::get('/chats/{chat}', [ChatController::class, 'show']);
+    Route::delete('/chats/{chat}', [ChatController::class, 'destroy']);
+
+    // Сообщения в чате
+    Route::post('/chats/{chat}/message', [ChatController::class, 'sendMessage']);
+
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // заявки пользователя / все (если нужно)
+    Route::get('/applications', [ApplicationController::class, 'index']);
+
+    // создать заявку
+    Route::post('/applications', [ApplicationController::class, 'store']);
+
+    // посмотреть заявку
+    Route::get('/applications/{application}', [ApplicationController::class, 'show']);
+
+    // удалить заявку (отмена)
+    Route::delete('/applications/{application}', [ApplicationController::class, 'destroy']);
+
+    // ===== управление статусом (только владелец проекта) =====
+
+    Route::patch('/applications/{application}/accept', [ApplicationController::class, 'accept']);
+
+    Route::patch('/applications/{application}/reject', [ApplicationController::class, 'reject']);
 });

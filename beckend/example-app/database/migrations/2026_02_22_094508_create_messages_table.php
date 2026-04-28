@@ -11,14 +11,14 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('chat_id')->constrained('chats')->onDelete('cascade');
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('project_id')->constrained()->onDelete('cascade');
             $table->string('text');
-            $table->timestamp('time');  // или $table->timestamp('created_at')->useCurrent();
+            $table->timestamp('time');
             
             $table->timestamps();
             
-            $table->index(['project_id', 'created_at']);
+            $table->index(['chat_id', 'created_at']);
         });
     }
 

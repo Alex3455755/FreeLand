@@ -191,9 +191,9 @@ export default {
           position: 'Senior full‑stack разработчик',
           quote: '15+ лет в веб‑разработке. Топ‑1% на бирже, 500+ успешных проектов. Гарантирую чистый код и дедлайны.',
           contacts: [
-            { type: 'email', icon: '📧', link: '#' },
-            { type: 'phone', icon: '📱', link: '#' },
-            { type: 'telegram', icon: '💬', link: '#' }
+            { type: 'email', icon: '', link: '#' },
+            { type: 'phone', icon: '', link: '#' },
+            { type: 'telegram', icon: '', link: '#' }
           ]
         },
         {

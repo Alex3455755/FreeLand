@@ -48,15 +48,12 @@
             <div class="balance-amount">{{ formatBalance(user.balance || 0) }}</div>
             <div class="balance-actions">
               <button @click="showDepositModal = true" class="balance-button deposit">
-                <span class="button-icon">💰</span>
                 Пополнить
               </button>
               <button @click="showWithdrawModal = true" class="balance-button withdraw">
-                <span class="button-icon">💸</span>
                 Вывести
               </button>
               <button @click="openSendModal" class="balance-button send">
-                <span class="button-icon">📤</span>
                 Отправить
               </button>
             </div>
@@ -70,21 +67,21 @@
             :class="{ active: activeTab === 'info' }"
             @click="activeTab = 'info'"
           >
-            📋 Информация
+            Информация
           </button>
           <button 
             class="tab-button" 
             :class="{ active: activeTab === 'edit' }"
             @click="activeTab = 'edit'"
           >
-            ✏️ Редактировать
+            Редактировать
           </button>
           <button 
             class="tab-button" 
             :class="{ active: activeTab === 'payments' }"
             @click="activeTab = 'payments'"
           >
-            💳 Платежи
+            Платежи
           </button>
         </div>
 
