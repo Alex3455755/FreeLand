@@ -13,17 +13,22 @@ class ChatController extends Controller
     /**
      * Список чатов пользователя
      */
-    public function index()
+    public function index(Request $request)
     {
-        $userId = Auth::id();
+        $userId = $this->resolveUserId($request);
 
         $chats = Chat::with(['author', 'interlocutor', 'project'])
-            ->where('author_id', $userId)
-            ->orWhere('interlocutor_id', $userId)
-            ->latest()
+            ->where(function ($query) use ($userId) {
+                $query->where('author_id', $userId)
+                    ->orWhere('interlocutor_id', $userId);
+            })
+            ->orderByDesc('updated_at')
             ->get();
 
-        return response()->json($chats);
+        return response()->json([
+            'success' => true,
+            'chats' => $chats,
+        ]);
     }
 
     /**
@@ -68,8 +73,10 @@ class ChatController extends Controller
     /**
      * Показ чата + сообщения
      */
-    public function show(Chat $chat)
+    public function show(Request $request, Chat $chat)
     {
+        $this->authorizeParticipant($request, $chat);
+
         $chat->load([
             'author',
             'interlocutor',
@@ -85,27 +92,52 @@ class ChatController extends Controller
      */
     public function sendMessage(Request $request, Chat $chat)
     {
+        $this->authorizeParticipant($request, $chat);
+
         $request->validate([
             'text' => 'required|string',
         ]);
 
         $message = Message::create([
             'chat_id' => $chat->id,
-            'author_id' => Auth::id(),
+            'author_id' => $this->resolveUserId($request),
             'text' => $request->text,
             'time' => now(),
         ]);
 
-        return response()->json($message, 201);
+        $chat->update([
+            'token' => Str::uuid(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'chat_token' => $chat->token,
+        ], 201);
     }
 
     /**
      * Удаление чата
      */
-    public function destroy(Chat $chat)
+    public function destroy(Request $request, Chat $chat)
     {
+        $this->authorizeParticipant($request, $chat);
+
         $chat->delete();
 
         return response()->json(['message' => 'Chat deleted']);
+    }
+
+    private function authorizeParticipant(Request $request, Chat $chat): void
+    {
+        $userId = $this->resolveUserId($request);
+        if ((int) $chat->author_id !== (int) $userId && (int) $chat->interlocutor_id !== (int) $userId) {
+            abort(403, 'Forbidden');
+        }
+    }
+
+    private function resolveUserId(Request $request): ?int
+    {
+        return $request->user()?->id ?? Auth::id();
     }
 }

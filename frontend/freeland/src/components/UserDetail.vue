@@ -741,7 +741,7 @@ export default {
         this.$router.push('/login?redirect=' + encodeURIComponent(this.$route.fullPath));
         return;
       }
-      this.$router.push(`/messages?user=${this.user.id}`);
+      this.$router.push(`/my-chats?user_id=${this.user.id}`);
     },
     
     formatRole(role) {

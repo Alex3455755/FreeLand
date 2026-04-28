@@ -272,7 +272,7 @@ export default {
     
     // Связаться с фрилансером
     contactFreelancer(id) {
-      this.$router.push(`/messages?user=${id}`);
+      this.$router.push(`/my-chats?user_id=${id}`);
     },
     
     // Форматирование цены

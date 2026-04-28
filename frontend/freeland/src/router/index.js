@@ -11,6 +11,7 @@ import UserDetail from '@/components/UserDetail.vue'
 import AdminPage from '@/components/AdminPage.vue'
 import ProfilPage from '@/components/ProfilPage.vue'
 import MyProjects from '@/components/MyProjects.vue'
+import MyChats from '@/components/MyChats.vue'
 import EmploeyPage from '@/components/EmploeyPage.vue'
 import NotFound from '@/components/NotFound.vue'
 import StatePage from '@/components/StatePage.vue'
@@ -46,6 +47,9 @@ const routes = [
   },{
     path: '/my-projects',
     component: MyProjects
+  },{
+    path: '/my-chats',
+    component: MyChats
   },{
     path: '/profile',
     component: ProfilPage

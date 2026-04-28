@@ -21,7 +21,7 @@
     <div class="container">
       <div class="page-header ios-glass">
         <h1 class="page-title">Мои проекты</h1>
-        <p class="page-subtitle">Управление вашими проектами и чатами</p>
+        <p class="page-subtitle">Управление вашими проектами и заявками</p>
       </div>
 
       <!-- Показываем loader пока загружается пользователь -->
@@ -33,19 +33,7 @@
       </div>
 
       <template v-else-if="user">
-        <!-- Табы для переключения между проектами и чатами -->
-        <div class="tabs-container ios-glass">
-          <button 
-            class="tab-button" 
-            :class="{ active: activeTab === 'projects' }"
-            @click="activeTab = 'projects'"
-          >
-            Проекты
-          </button>
-        </div>
-
-        <!-- Вкладка с проектами -->
-        <div v-if="activeTab === 'projects'" class="projects-tab">
+        <div class="projects-tab">
           <!-- Состояние загрузки проектов -->
           <div v-if="projectsLoading" class="loading-state">
             <div class="loader ios-glass">
@@ -69,6 +57,54 @@
               </div>
 
               <p class="project-description">{{ truncateDescription(project.description) }}</p>
+
+              <div
+                v-if="canManageApplications(project)"
+                class="applications-section ios-glass"
+              >
+                <h4 class="applications-title">Заявки фрилансеров</h4>
+
+                <div v-if="getProjectApplications(project.id).length === 0" class="applications-empty">
+                  Пока нет заявок
+                </div>
+
+                <div
+                  v-for="application in getProjectApplications(project.id)"
+                  :key="application.id"
+                  class="application-item"
+                >
+                  <div class="application-main">
+                    <div class="partner-avatar">
+                      {{ getInitials(application.user?.full_name || application.user?.login) }}
+                    </div>
+                    <div class="application-user">
+                      <div class="application-user-name">
+                        {{ application.user?.full_name || application.user?.login || 'Фрилансер' }}
+                      </div>
+                      <div class="application-status" :class="application.status">
+                        {{ getApplicationStatusText(application.status) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="application.status === 'pending'" class="application-actions">
+                    <button
+                      class="action-button approve-button"
+                      :disabled="isApplicationUpdating(application.id)"
+                      @click="acceptApplication(application)"
+                    >
+                      {{ isApplicationUpdating(application.id) ? 'Обработка...' : 'Принять' }}
+                    </button>
+                    <button
+                      class="action-button reject-button"
+                      :disabled="isApplicationUpdating(application.id)"
+                      @click="rejectApplication(application)"
+                    >
+                      {{ isApplicationUpdating(application.id) ? 'Обработка...' : 'Отклонить' }}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <div class="project-meta">
                 <div class="meta-item">
@@ -113,7 +149,7 @@
                   <!-- Кнопка чата (если есть исполнитель) -->
                   <button 
                     v-if="project.freelancer_id && (isCustomer || (isFreelancer && project.freelancer_id === user.id))"
-                    @click="openChat(project)"
+                    @click="goToMyChats(project.id)"
                     class="action-button chat-button"
                   >
                     Чат
@@ -151,59 +187,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Вкладка с чатами -->
-        <div v-if="activeTab === 'chats'" class="chats-tab">
-          <div v-if="chatsLoading" class="loading-state">
-            <div class="loader ios-glass">
-              <div class="loader-spinner"></div>
-              <p>Загрузка чатов...</p>
-            </div>
-          </div>
-
-          <div v-else-if="chats.length > 0" class="chats-list">
-            <div 
-              v-for="chat in chats" 
-              :key="chat.project.id" 
-              class="chat-card ios-glass"
-              @click="openChat(chat.project)"
-            >
-              <div class="chat-header">
-                <h4 class="chat-project-title">{{ chat.project.title }}</h4>
-                <div class="chat-project-status" :class="chat.project.status">
-                  {{ getStatusText(chat.project.status) }}
-                </div>
-              </div>
-
-              <div class="chat-partner">
-                <div class="partner-avatar large">
-                  {{ getInitials(chat.partner?.full_name || chat.partner?.login) }}
-                </div>
-                <div class="partner-info">
-                  <div class="partner-name">{{ chat.partner?.full_name || chat.partner?.login || 'Неизвестно' }}</div>
-                  <div class="partner-role">{{ getRoleText(chat.partner?.role) }}</div>
-                </div>
-              </div>
-
-              <div class="chat-last-message" v-if="chat.lastMessage">
-                <span class="message-time">{{ formatTime(chat.lastMessage.time) }}</span>
-                <p class="message-preview">{{ truncateMessage(chat.lastMessage.message) }}</p>
-              </div>
-              <div v-else class="chat-last-message empty">
-                <p class="message-preview">Нет сообщений</p>
-              </div>
-
-              <div class="chat-actions">
-                <button class="action-button chat-open">Открыть чат →</button>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="empty-state ios-glass">
-            <h3 class="empty-title">Нет активных чатов</h3>
-            <p class="empty-text">Начните общение, когда у проекта появится исполнитель</p>
-          </div>
-        </div>
       </template>
 
       <!-- Если пользователь не авторизован -->
@@ -213,74 +196,6 @@
         <button @click="goToLogin" class="action-button primary">
           Войти
         </button>
-      </div>
-    </div>
-
-    <!-- Модальное окно чата -->
-    <div v-if="showChatModal" class="modal-overlay" @click.self="closeChatModal">
-      <div class="chat-modal ios-glass">
-        <div class="chat-modal-header">
-          <div class="chat-modal-project">
-            <h3>{{ currentChatProject?.title }}</h3>
-            <div class="chat-modal-partner">
-              <div class="partner-avatar small">
-                {{ getInitials(currentChatPartner?.full_name || currentChatPartner?.login) }}
-              </div>
-              <span>{{ currentChatPartner?.full_name || currentChatPartner?.login }}</span>
-              <span class="partner-role-badge">{{ getRoleText(currentChatPartner?.role) }}</span>
-            </div>
-          </div>
-          <button @click="closeChatModal" class="modal-close">×</button>
-        </div>
-
-        <div class="chat-messages" ref="messagesContainer">
-          <div v-if="messagesLoading" class="messages-loading">
-            <div class="loader-sm"></div>
-          </div>
-
-          <div v-else-if="messages.length > 0" class="messages-list">
-            <div 
-              v-for="message in messages" 
-              :key="message.id" 
-              class="message-item"
-              :class="{ 'my-message': message.author_id === user?.id }"
-            >
-              <div class="message-avatar">
-                {{ getInitials(getMessageAuthor(message).full_name || getMessageAuthor(message).login) }}
-              </div>
-              <div class="message-content">
-                <div class="message-header">
-                  <span class="message-author">
-                    {{ getMessageAuthor(message).full_name || getMessageAuthor(message).login }}
-                  </span>
-                  <span class="message-time">{{ formatTime(message.time) }}</span>
-                </div>
-                <p class="message-text">{{ message.text }}</p>
-              </div>
-            </div>
-          </div>
-          <div v-else class="no-messages">
-            <p>Нет сообщений. Напишите первое сообщение!</p>
-          </div>
-        </div>
-
-        <div class="chat-input-area">
-          <textarea 
-            v-model="newMessage" 
-            @keydown.enter.prevent="sendMessage"
-            placeholder="Введите сообщение..."
-            class="chat-input"
-            rows="2"
-          ></textarea>
-          <button 
-            @click="sendMessage" 
-            class="send-button"
-            :disabled="!newMessage.trim() || messageSending"
-          >
-            <span v-if="messageSending" class="button-spinner"></span>
-            <span v-else>Отправить</span>
-          </button>
-        </div>
       </div>
     </div>
 
@@ -392,32 +307,18 @@ export default {
       projects: [],
       projectsLoading: false,
       categories: [],
-      
-      // Данные для чатов
-      chats: [],
-      chatsLoading: false,
-      messages: [],
-      messagesLoading: false,
-      messageSending: false,
-      newMessage: '',
+      applications: [],
+      applicationsLoading: false,
+      updatingApplicationIds: [],
       
       // Состояние UI
-      activeTab: 'projects',
-      showChatModal: false,
       showEditModal: false,
-      
-      // Текущий чат
-      currentChatProject: null,
-      currentChatPartner: null,
       
       // Редактирование проекта
       editingProject: null,
       projectUpdating: false,
       
-      apiBaseUrl: '',
-      
-      // Таймер для обновления сообщений
-      messagesInterval: null
+      apiBaseUrl: ''
     }
   },
   
@@ -442,21 +343,6 @@ export default {
   created() {
     this.fetchUser() // КАК В HEADER MENU
     this.fetchCategories()
-  },
-  
-  mounted() {
-    // Запускаем периодическое обновление сообщений
-    this.messagesInterval = setInterval(() => {
-      if (this.showChatModal && this.currentChatProject) {
-        this.fetchMessages(this.currentChatProject.id)
-      }
-    }, 5000)
-  },
-  
-  beforeUnmount() {
-    if (this.messagesInterval) {
-      clearInterval(this.messagesInterval)
-    }
   },
   
   methods: {
@@ -540,6 +426,12 @@ export default {
         } else {
           this.projects = []
         }
+
+        if (this.isCustomer) {
+          await this.fetchApplications()
+        } else {
+          this.applications = []
+        }
         
         console.log('MyProjects - Установлены проекты:', this.projects)
         
@@ -547,6 +439,112 @@ export default {
         console.error('MyProjects - Ошибка при загрузке проектов:', error)
       } finally {
         this.projectsLoading = false
+      }
+    },
+
+    async fetchApplications() {
+      const token = localStorage.getItem('token')
+      if (!token || !this.user || !this.isCustomer) {
+        this.applications = []
+        return
+      }
+
+      this.applicationsLoading = true
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        this.applications = Array.isArray(data) ? data : []
+      } catch (error) {
+        console.error('MyProjects - Ошибка при загрузке заявок:', error)
+        this.applications = []
+      } finally {
+        this.applicationsLoading = false
+      }
+    },
+
+    canManageApplications(project) {
+      return Boolean(this.isCustomer && this.user && project?.customer_id === this.user.id)
+    },
+
+    getProjectApplications(projectId) {
+      if (!projectId || !this.isCustomer || !this.user) {
+        return []
+      }
+
+      return this.applications.filter(
+        application => application.project_id === projectId
+      )
+    },
+
+    getApplicationStatusText(status) {
+      const statuses = {
+        pending: 'На рассмотрении',
+        accepted: 'Принята',
+        rejected: 'Отклонена'
+      }
+      return statuses[status] || status
+    },
+
+    isApplicationUpdating(applicationId) {
+      return this.updatingApplicationIds.includes(applicationId)
+    },
+
+    async acceptApplication(application) {
+      await this.updateApplicationStatus(application, 'accept')
+    },
+
+    async rejectApplication(application) {
+      await this.updateApplicationStatus(application, 'reject')
+    },
+
+    async updateApplicationStatus(application, action) {
+      const token = localStorage.getItem('token')
+      if (!token || !application?.id) {
+        return
+      }
+
+      this.updatingApplicationIds.push(application.id)
+
+      try {
+        const response = await fetch(
+          `${this.apiBaseUrl}/api/applications/${application.id}/${action}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Accept': 'application/json',
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        )
+
+        const result = await response.json()
+        if (!response.ok) {
+          throw new Error(result.message || 'Не удалось обновить статус заявки')
+        }
+
+        await this.fetchApplications()
+        await this.fetchMyProjects()
+
+        const actionText = action === 'accept' ? 'принята' : 'отклонена'
+        const freelancerName = application.user?.full_name || application.user?.login || 'Заявка'
+        alert(`${freelancerName}: заявка ${actionText}`)
+
+      } catch (error) {
+        console.error('MyProjects - Ошибка при обновлении заявки:', error)
+        alert(error.message || 'Ошибка при обновлении заявки')
+      } finally {
+        this.updatingApplicationIds = this.updatingApplicationIds.filter(id => id !== application.id)
       }
     },
     
@@ -564,197 +562,6 @@ export default {
       } catch (error) {
         console.error('Ошибка при загрузке категорий:', error)
       }
-    },
-    
-    // Получение чатов
-    async fetchChats() {
-      const token = localStorage.getItem('token')
-      
-      if (!token) {
-        return
-      }
-      
-      this.chatsLoading = true
-      
-      try {
-        const response = await fetch(`${this.apiBaseUrl}/api/my-chats`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        console.log('Мои чаты:', data)
-        
-        if (data.success && data.chats) {
-          this.chats = data.chats
-        } else {
-          this.chats = []
-        }
-        
-      } catch (error) {
-        console.error('Ошибка при загрузке чатов:', error)
-      } finally {
-        this.chatsLoading = false
-      }
-    },
-    
-    // Открыть чат
-    async openChat(project) {
-      this.currentChatProject = project
-      
-      // Определяем партнера по чату
-      if (this.isCustomer) {
-        this.currentChatPartner = project.freelancer
-      } else {
-        this.currentChatPartner = project.customer
-      }
-      
-      this.showChatModal = true
-      document.body.style.overflow = 'hidden'
-      
-      await this.fetchMessages(project.id)
-    },
-    
-    // Получение сообщений для проекта
-    async fetchMessages(projectId) {
-      const token = localStorage.getItem('token')
-      
-      if (!token) {
-        return
-      }
-      
-      this.messagesLoading = true
-      
-      try {
-        const response = await fetch(`${this.apiBaseUrl}/api/messages?project_id=${projectId}`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        console.log('Сообщения:', data)
-        
-        if (data.success && data.messages) {
-          this.messages = data.messages
-        } else if (Array.isArray(data)) {
-          this.messages = data
-        } else {
-          this.messages = []
-        }
-        
-        // Прокручиваем вниз
-        this.$nextTick(() => {
-          const container = this.$refs.messagesContainer
-          if (container) {
-            container.scrollTop = container.scrollHeight
-          }
-        })
-        
-      } catch (error) {
-        console.error('Ошибка при загрузке сообщений:', error)
-      } finally {
-        this.messagesLoading = false
-      }
-    },
-    
-    // Отправка сообщения
-    async sendMessage() {
-      if (!this.newMessage.trim() || !this.user || !this.currentChatProject) {
-        return
-      }
-      
-      const token = localStorage.getItem('token')
-      
-      if (!token) {
-        return
-      }
-      
-      this.messageSending = true
-      
-      try {
-        const messageData = {
-          author_id: this.user.id,
-          project_id: this.currentChatProject.id,
-          text: this.newMessage.trim(),
-          time: new Date().toISOString()
-        }
-        
-        const response = await fetch(`${this.apiBaseUrl}/api/messages/add`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(messageData)
-        })
-        
-        const result = await response.json()
-        console.log('Результат отправки:', result)
-        
-        if (response.ok && result.success) {
-          // Добавляем сообщение в список
-          this.messages.push({
-            ...messageData,
-            id: result.message_id || Date.now()
-          })
-          
-          this.newMessage = ''
-          
-          // Прокручиваем вниз
-          this.$nextTick(() => {
-            const container = this.$refs.messagesContainer
-            if (container) {
-              container.scrollTop = container.scrollHeight
-            }
-          })
-        } else {
-          throw new Error(result.message || 'Ошибка при отправке сообщения')
-        }
-        
-      } catch (error) {
-        console.error('Ошибка при отправке сообщения:', error)
-        alert('Ошибка при отправке сообщения: ' + error.message)
-      } finally {
-        this.messageSending = false
-      }
-    },
-    
-    // Получить автора сообщения
-    getMessageAuthor(message) {
-      if (message.author_id === this.user?.id) {
-        return this.user
-      } else if (message.author_id === this.currentChatPartner?.id) {
-        return this.currentChatPartner
-      } else if (message.author_id === this.currentChatProject?.customer_id) {
-        return this.currentChatProject.customer
-      } else if (message.author_id === this.currentChatProject?.freelancer_id) {
-        return this.currentChatProject.freelancer
-      }
-      
-      return { full_name: 'Пользователь', login: 'user' }
-    },
-    
-    // Закрыть чат
-    closeChatModal() {
-      this.showChatModal = false
-      this.currentChatProject = null
-      this.currentChatPartner = null
-      this.messages = []
-      this.newMessage = ''
-      document.body.style.overflow = ''
     },
     
     // Редактирование проекта
@@ -825,18 +632,19 @@ export default {
     goToProjects() {
       this.$router.push('/projects')
     },
+
+    // Перейти на страницу чатов
+    goToMyChats(projectId = null) {
+      if (projectId) {
+        this.$router.push(`/my-chats?project_id=${projectId}`)
+        return
+      }
+      this.$router.push('/my-chats')
+    },
     
     // Перейти на страницу логина
     goToLogin() {
       this.$router.push('/login')
-    },
-    
-    // Переключение табов
-    onTabChange(tab) {
-      this.activeTab = tab
-      if (tab === 'chats' && this.chats.length === 0) {
-        this.fetchChats()
-      }
     },
     
     // Форматирование бюджета
@@ -918,14 +726,6 @@ export default {
         : description
     },
     
-    // Обрезка сообщения
-    truncateMessage(message) {
-      if (!message) return ''
-      return message.length > 50 
-        ? message.substring(0, 50) + '...' 
-        : message
-    },
-    
     // Инициалы
     getInitials(name) {
       if (!name) return '?'
@@ -935,15 +735,6 @@ export default {
         .join('')
         .toUpperCase()
         .slice(0, 2)
-    }
-  },
-  
-  watch: {
-    activeTab: {
-      handler(tab) {
-        this.onTabChange(tab)
-      },
-      immediate: true
     }
   }
 }
@@ -1093,6 +884,88 @@ export default {
   line-height: 1.6;
   margin-bottom: 20px;
   font-size: 1rem;
+}
+
+.applications-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid rgba(168, 209, 255, 0.16);
+}
+
+.applications-title {
+  margin: 0 0 12px;
+  color: #FFFFFF;
+  font-size: 1rem;
+}
+
+.applications-empty {
+  color: #A8D1FF;
+  opacity: 0.8;
+}
+
+.application-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(168, 209, 255, 0.12);
+}
+
+.application-item:first-of-type {
+  border-top: none;
+}
+
+.application-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.application-user-name {
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.application-status {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #A8D1FF;
+}
+
+.application-status.accepted {
+  color: #2ecc71;
+}
+
+.application-status.rejected {
+  color: #e67e22;
+}
+
+.application-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button.approve-button {
+  background: rgba(39, 174, 96, 0.2);
+  border: 1px solid rgba(39, 174, 96, 0.4);
+  color: #2ecc71;
+}
+
+.action-button.approve-button:hover {
+  background: rgba(39, 174, 96, 0.35);
+  color: #FFFFFF;
+}
+
+.action-button.reject-button {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #ff8f80;
+}
+
+.action-button.reject-button:hover {
+  background: rgba(231, 76, 60, 0.35);
+  color: #FFFFFF;
 }
 
 .project-meta {

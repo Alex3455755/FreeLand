@@ -20,6 +20,15 @@
           >
             Мои проекты
           </router-link>
+
+          <router-link
+            v-if="user"
+            to="/my-chats"
+            class="nav-link"
+            :class="{ active: $route.path === '/my-chats' }"
+          >
+            Чаты
+          </router-link>
           
           <!-- Админ панель только для админов -->
           <router-link v-if="user?.role === 'admin'" to="/admin" class="nav-link" :class="{ active: $route.path.startsWith('/admin') }">

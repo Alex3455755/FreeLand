@@ -177,6 +177,26 @@
             </div>
           </div>
 
+          <div v-if="user && user.role === 'freelancer' && myApplication" class="application-status ios-glass">
+            <h3>Статус вашей заявки</h3>
+
+            <div class="status-badge" :class="myApplication.status">
+              {{ applicationStatusText }}
+            </div>
+
+            <p v-if="myApplication.status === 'pending'">
+              Ваша заявка ожидает рассмотрения заказчиком
+            </p>
+
+            <p v-if="myApplication.status === 'accepted'">
+              Вас приняли в проект 🎉
+            </p>
+
+            <p v-if="myApplication.status === 'rejected'">
+              К сожалению, заявку отклонили
+            </p>
+          </div>
+
           <!-- Кнопка отклика для фрилансеров -->
           <div v-if="canRespond" class="action-section">
             <button 
@@ -239,6 +259,8 @@ export default {
       customerLoading: false,
       freelancerLoading: false,
       loading: true,
+      myApplication: null,
+      applicationLoading: false,
       apiBaseUrl: '',
       
       // Данные пользователя
@@ -267,14 +289,28 @@ export default {
     isAuthor() {
       return this.user && this.customer && this.user.id === this.customer.id;
     },
+    applicationStatusText() {
+  if (!this.myApplication) return null;
+
+  const map = {
+    pending: '⏳ На рассмотрении',
+    accepted: '✅ Принята',
+    rejected: '❌ Отклонена'
+  };
+
+  return map[this.myApplication.status] || this.myApplication.status;
+},
     
     // Проверка, может ли пользователь откликнуться
     canRespond() {
-      return this.user && 
-             this.user.role === 'freelancer' && 
-             this.project && 
-             this.project.status === 'open' && 
-             !this.project.freelancer_id;
+      return (
+        this.user &&
+        this.user.role === 'freelancer' &&
+        this.project &&
+        this.project.status === 'open' &&
+        !this.project.freelancer_id &&
+        !this.myApplication // 👈 ключевая проверка
+      );
     },
     
     // Текст кнопки в зависимости от состояния
@@ -328,6 +364,37 @@ export default {
         this.userLoading = false;
       }
     },
+    async fetchMyApplication() {
+  if (!this.user || this.user.role !== 'freelancer') return;
+
+  this.applicationLoading = true;
+
+  const token = localStorage.getItem('token');
+
+  try {
+    const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      // ищем заявку именно на этот проект
+      this.myApplication = data.find(app =>
+        app.project_id === this.project.id &&
+        app.user_id === this.user.id
+      ) || null;
+    }
+
+  } catch (error) {
+    console.error('Ошибка загрузки заявки:', error);
+  } finally {
+    this.applicationLoading = false;
+  }
+},
     
     async fetchProject() {
       try {
@@ -337,6 +404,7 @@ export default {
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         
         const data = await response.json();
         
@@ -351,6 +419,9 @@ export default {
         
         if (this.project.customer_id) {
           await this.fetchCustomer(this.project.customer_id);
+        }
+                if (this.user) {
+          await this.fetchMyApplication();
         }
         
         if (this.project.freelancer_id) {
@@ -574,72 +645,49 @@ export default {
     
     // Метод для отклика на проект
     async respondToProject() {
-      if (!this.user || this.user.role !== 'freelancer') {
-        this.showMessage('Только фрилансеры могут откликаться на проекты', 'error');
-        return;
-      }
-      
-      if (this.project.freelancer_id) {
-        this.showMessage('На этот проект уже есть исполнитель', 'error');
-        return;
-      }
-      
-      if (this.project.status !== 'open') {
-        this.showMessage('Этот проект уже закрыт для откликов', 'error');
-        return;
-      }
-      
-      this.responding = true;
-      this.respondMessage = '';
-      
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        this.showMessage('Необходимо авторизоваться', 'error');
-        this.responding = false;
-        return;
-      }
-      
-      try {
-        const projectData = {
-          id: this.project.id,
-          freelancer_id: this.user.id,
-          status: 'in_progress'
-        };
-        
-        console.log('Отправка данных:', projectData);
-        
-        const response = await fetch(`${this.apiBaseUrl}/api/projects/edit`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(projectData)
-        });
-        
-        const result = await response.json();
-        console.log('Ответ сервера:', result);
-        
-        if (response.ok && result.success) {
-          this.project.freelancer_id = this.user.id;
-          this.project.status = 'in_progress';
-          this.selectedStatus = 'in_progress';
-          
-          await this.fetchFreelancer(this.user.id);
-          
-          this.showMessage('Вы успешно откликнулись на проект!', 'success');
-        } else {
-          throw new Error(result.message || 'Ошибка при отклике на проект');
-        }
-        
-      } catch (error) {
-        console.error('Ошибка при отклике:', error);
-        this.showMessage(error.message || 'Ошибка при отклике на проект', 'error');
-      } finally {
-        this.responding = false;
-      }
-    },
+  if (!this.user || this.user.role !== 'freelancer') {
+    this.showMessage('Только фрилансеры могут откликаться на проекты', 'error');
+    return;
+  }
+
+  this.responding = true;
+  this.respondMessage = '';
+
+  const token = localStorage.getItem('token');
+
+  if (!token) {
+    this.showMessage('Необходимо авторизоваться', 'error');
+    this.responding = false;
+    return;
+  }
+
+  try {
+    const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        project_id: this.project.id
+      })
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      this.showMessage('Заявка успешно отправлена!', 'success');
+    } else {
+      throw new Error(result.message || 'Ошибка при отправке заявки');
+    }
+
+  } catch (error) {
+    console.error('Ошибка заявки:', error);
+    this.showMessage(error.message || 'Ошибка при отправке заявки', 'error');
+  } finally {
+    this.responding = false;
+  }
+},
     
     showMessage(message, type = 'info') {
       this.respondMessage = message;
@@ -926,6 +974,31 @@ export default {
 .modal-close:hover {
   color: #FFFFFF;
   transform: scale(1.1);
+}
+
+.application-status {
+  margin-bottom: 25px;
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.status-badge {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 10px 0;
+}
+
+.status-badge.pending {
+  color: #f1c40f;
+}
+
+.status-badge.accepted {
+  color: #2ecc71;
+}
+
+.status-badge.rejected {
+  color: #e74c3c;
 }
 
 .modal-content {

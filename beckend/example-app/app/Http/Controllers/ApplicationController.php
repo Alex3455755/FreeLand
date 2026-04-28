@@ -29,7 +29,9 @@ class ApplicationController extends Controller
             'project_id' => 'required|exists:projects,id',
         ]);
 
-        $userId = Auth::id();
+        $user = $request->user();
+
+        $userId = $user->id;
 
         $existing = Application::where('user_id', $userId)
             ->where('project_id', $request->project_id)
@@ -53,22 +55,34 @@ class ApplicationController extends Controller
     /**
      * Принять заявку
      */
-    public function accept(Application $application)
+    public function accept(Request $request, Application $application)
     {
-        $this->authorizeProjectOwner($application);
+        $this->authorizeProjectOwner($request, $application);
+
+        $project = $application->project;
+        $projectOwnerId = $project->customer_id ?? $project->user_id ?? null;
+        $freelancerId = $application->user_id;
 
         $application->update([
             'status' => Application::STATUS_ACCEPTED,
         ]);
 
-        // 🔥 создаём чат при принятии заявки
-        $chat = Chat::firstOrCreate([
-            'author_id' => $application->project->user_id,
-            'interlocutor_id' => $application->user_id,
-            'project_id' => $application->project_id,
-        ], [
-            'token' => Str::uuid(),
+        // Синхронизируем проект с принятым исполнителем
+        $project->update([
+            'freelancer_id' => $freelancerId,
+            'status' => $project->status === 'open' ? 'in_progress' : $project->status,
         ]);
+
+        // Создаём или исправляем чат проекта, чтобы он был виден обеим сторонам
+        $chat = Chat::firstOrNew([
+            'project_id' => $application->project_id,
+        ]);
+        $chat->author_id = $projectOwnerId;
+        $chat->interlocutor_id = $freelancerId;
+        if (!$chat->token) {
+            $chat->token = Str::uuid();
+        }
+        $chat->save();
 
         return response()->json([
             'application' => $application,
@@ -79,9 +93,9 @@ class ApplicationController extends Controller
     /**
      * Отклонить заявку
      */
-    public function reject(Application $application)
+    public function reject(Request $request, Application $application)
     {
-        $this->authorizeProjectOwner($application);
+        $this->authorizeProjectOwner($request, $application);
 
         $application->update([
             'status' => Application::STATUS_REJECTED,
@@ -101,9 +115,10 @@ class ApplicationController extends Controller
     /**
      * Удаление заявки
      */
-    public function destroy(Application $application)
+    public function destroy(Request $request, Application $application)
     {
-        if ($application->user_id !== Auth::id()) {
+        $userId = $this->resolveUserId($request);
+        if ($application->user_id !== $userId) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
 
@@ -115,10 +130,19 @@ class ApplicationController extends Controller
     /**
      * Проверка прав владельца проекта
      */
-    private function authorizeProjectOwner(Application $application)
+    private function authorizeProjectOwner(Request $request, Application $application)
     {
-        if ($application->project->user_id !== Auth::id()) {
+        $userId = $this->resolveUserId($request);
+        $project = $application->project;
+        $projectOwnerId = $project->customer_id ?? $project->user_id ?? null;
+
+        if ((int) $projectOwnerId !== (int) $userId) {
             abort(403, 'Only project owner can change status');
         }
+    }
+
+    private function resolveUserId(Request $request): ?int
+    {
+        return $request->user()?->id ?? Auth::id();
     }
 }
