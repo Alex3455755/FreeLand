@@ -470,11 +470,11 @@ export default {
     return {
       activeTab: 'users',
       tabs: [
-  { value: 'users', label: 'Пользователи', icon: '👥' },
-  { value: 'projects', label: 'Проекты', icon: '📋' },
-  { value: 'categories', label: 'Категории', icon: '📁' },
-  { value: 'comments', label: 'Комментарии', icon: '💬' },
-  { value: 'payments', label: 'Платежи', icon: '💰' },
+  { value: 'users', label: 'Пользователи', icon: '' },
+  { value: 'projects', label: 'Проекты', icon: '' },
+  { value: 'categories', label: 'Категории', icon: '' },
+  { value: 'comments', label: 'Комментарии', icon: '' },
+  { value: 'payments', label: 'Платежи', icon: '' },
 ],
       
       // Данные

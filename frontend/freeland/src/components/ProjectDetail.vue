@@ -44,22 +44,22 @@
 
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">💰 Бюджет:</span>
+              <span class="info-label">Бюджет:</span>
               <span class="info-value">{{ formatBudget(project.budget) }}</span>
             </div>
             
             <div class="info-item" v-if="project.deadline">
-              <span class="info-label">⏰ Дедлайн:</span>
+              <span class="info-label">Дедлайн:</span>
               <span class="info-value">{{ formatDate(project.deadline) }}</span>
             </div>
             
             <div class="info-item">
-              <span class="info-label">📁 Категория:</span>
+              <span class="info-label">Категория:</span>
               <span class="info-value">{{ getCategoryName(project.category_id) }}</span>
             </div>
             
             <div class="info-item" v-if="project.created_at">
-              <span class="info-label">📅 Дата создания:</span>
+              <span class="info-label">Дата создания:</span>
               <span class="info-value">{{ formatDate(project.created_at) }}</span>
             </div>
           </div>
@@ -83,27 +83,23 @@
                 
                 <!-- Логин (email) -->
                 <div class="customer-login" v-if="customer.login">
-                  <span class="info-label">🔑 Логин:</span>
+                  <span class="info-label">Логин:</span>
                   <span class="info-value">{{ customer.login }}</span>
                 </div>
                 
                 <!-- Телефон -->
                 <div class="customer-phone" v-if="customer.phone">
-                  <span class="info-label">📞 Телефон:</span>
+                  <span class="info-label">Телефон:</span>
                   <span class="info-value">{{ customer.phone }}</span>
                 </div>
                 
                 <!-- Дата регистрации -->
                 <div class="customer-joined" v-if="customer.created_at">
-                  <span class="info-label">📅 На платформе с:</span>
+                  <span class="info-label">На платформе с </span>
                   <span class="info-value">{{ formatDate(customer.created_at) }}</span>
                 </div>
                 
                 <!-- Аватар (если есть) -->
-                <div class="customer-avatar-info" v-if="customer.avatar">
-                  <span class="info-label">🖼️ Аватар:</span>
-                  <span class="info-value">{{ customer.avatar }}</span>
-                </div>
               </div>
             </div>
             <div v-else class="customer-not-found">
@@ -127,11 +123,11 @@
                   {{ freelancer.full_name || freelancer.name || freelancer.login || 'Без имени' }}
                 </div>
                 <div class="customer-login" v-if="freelancer.login">
-                  <span class="info-label">🔑 Логин:</span>
+                  <span class="info-label">Логин:</span>
                   <span class="info-value">{{ freelancer.login }}</span>
                 </div>
                 <div class="customer-phone" v-if="freelancer.phone">
-                  <span class="info-label">📞 Телефон:</span>
+                  <span class="info-label">Телефон:</span>
                   <span class="info-value">{{ freelancer.phone }}</span>
                 </div>
                 

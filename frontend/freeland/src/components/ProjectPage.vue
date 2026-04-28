@@ -90,17 +90,14 @@
             
             <div class="project-meta">
               <div class="meta-item">
-                <span class="meta-icon">💰</span>
                 <span class="meta-value">{{ formatBudget(project.budget) }}</span>
               </div>
               
               <div class="meta-item" v-if="project.deadline">
-                <span class="meta-icon">⏰</span>
                 <span class="meta-value">{{ formatDeadline(project.deadline) }}</span>
               </div>
               
               <div class="meta-item">
-                <span class="meta-icon">📁</span>
                 <span class="meta-value">{{ getCategoryName(project.category_id) }}</span>
               </div>
             </div>
@@ -108,22 +105,9 @@
             <div class="project-footer">
               <!-- Отображаем информацию о заказчике -->
               <div class="customer-info">
-                <div v-if="customers[project.customer_id]" class="customer-avatar">
-                  {{ getInitials(customers[project.customer_id].name) }}
-                </div>
-                <div v-else class="customer-avatar loading-avatar">
-                  <div class="avatar-spinner"></div>
-                </div>
-                
                 <span class="customer-name">
                   <template v-if="customers[project.customer_id]">
                     {{ customers[project.customer_id].name }}
-                  </template>
-                  <template v-else-if="loadingCustomers[project.customer_id]">
-                    Загрузка...
-                  </template>
-                  <template v-else>
-                    Заказчик
                   </template>
                 </span>
               </div>
@@ -139,7 +123,7 @@
 
       <!-- Пустое состояние -->
       <div v-else class="empty-state ios-glass">
-        <div class="empty-icon">📋</div>
+        <div class="empty-icon"></div>
         <h3 class="empty-title">Проекты не найдены</h3>
         <p class="empty-text">Попробуйте изменить параметры поиска</p>
         <button @click="resetFilters" class="reset-button ios-glass">
