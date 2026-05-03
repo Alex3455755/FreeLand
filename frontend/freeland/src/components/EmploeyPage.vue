@@ -357,9 +357,27 @@ export default {
 
     // Добавление нового отзыва (с fetch запросом к БД)
     async addReview() {
-  // Валидация
-  if (!this.newReview.name.trim() || !this.newReview.email.trim() || !this.newReview.text.trim()) {
+  const name = this.newReview.name.trim()
+  const email = this.newReview.email.trim()
+  const text = this.newReview.text.trim()
+
+  if (!name || !email || !text) {
     alert('Пожалуйста, заполните все поля.')
+    return
+  }
+
+  if (name.length < 2) {
+    alert('Имя должно быть не короче 2 символов.')
+    return
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert('Введите корректный email.')
+    return
+  }
+
+  if (text.length < 10) {
+    alert('Текст отзыва должен быть не короче 10 символов.')
     return
   }
 
@@ -376,9 +394,9 @@ export default {
         'X-CSRF-TOKEN': this.getCsrfToken() // Если используете CSRF защиту
       },
       body: JSON.stringify({
-        name: this.newReview.name.trim(),
-        email: this.newReview.email.trim(),
-        text: this.newReview.text.trim()
+        name,
+        email,
+        text
       })
     })
 

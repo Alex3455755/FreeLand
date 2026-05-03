@@ -112,6 +112,31 @@
               </div>
             </div>
           </div>
+
+          <div v-if="user.role === 'freelancer' || user.role === 'фрилансер'" class="info-section">
+            <h3>Мои заявки</h3>
+            <div v-if="applicationsLoading" class="no-payments">Загрузка заявок...</div>
+            <div v-else-if="myApplications.length > 0" class="payments-list">
+              <div v-for="application in myApplications" :key="application.id" class="payment-item">
+                <div class="payment-details">
+                  <div class="payment-header">
+                    <span class="payment-recipient">
+                      {{ application.project?.title || `Проект #${application.project_id}` }}
+                    </span>
+                    <span class="payment-status" :class="application.status">
+                      {{ getApplicationStatusText(application.status) }}
+                    </span>
+                  </div>
+                  <div class="payment-meta">
+                    <span class="payment-date">{{ formatDate(application.created_at) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="no-payments">
+              Вы еще не оставляли заявок
+            </div>
+          </div>
         </div>
 
         <!-- Вкладка с редактированием -->
@@ -428,6 +453,8 @@ export default {
       // Платежи
       sentPayments: [],
       receivedPayments: [],
+      myApplications: [],
+      applicationsLoading: false,
       
       // Модальные окна
       showDepositModal: false,
@@ -492,6 +519,7 @@ export default {
           this.user = data1.user
           this.sentPayments = data2.sent_payments || []
           this.receivedPayments = data2.received_payments || []
+          await this.fetchMyApplications()
           
           this.editForm = {
             full_name: this.user.full_name || '',
@@ -508,6 +536,34 @@ export default {
         console.error('Ошибка загрузки профиля:', error)
       } finally {
         this.loading = false
+      }
+    },
+
+    async fetchMyApplications() {
+      if (!this.user || (this.user.role !== 'freelancer' && this.user.role !== 'фрилансер')) {
+        this.myApplications = []
+        return
+      }
+
+      this.applicationsLoading = true
+      const token = localStorage.getItem('token')
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        const data = await response.json()
+        const applications = Array.isArray(data) ? data : (data.applications || [])
+        this.myApplications = applications.filter(app => app.user_id === this.user.id)
+      } catch (error) {
+        console.error('Ошибка загрузки заявок:', error)
+        this.myApplications = []
+      } finally {
+        this.applicationsLoading = false
       }
     },
     
@@ -554,6 +610,39 @@ export default {
     async updateProfile() {
       this.updating = true
       this.updateMessage = ''
+
+      const fullName = String(this.editForm.full_name || '').trim()
+      const phone = String(this.editForm.phone || '').trim()
+      const password = String(this.editForm.password || '')
+      const passwordConfirmation = String(this.editForm.password_confirmation || '')
+
+      if (fullName && fullName.length < 2) {
+        this.updateMessage = 'Полное имя должно быть не короче 2 символов'
+        this.updateMessageType = 'error'
+        this.updating = false
+        return
+      }
+
+      if (phone && !/^\+?[0-9\s\-()]{7,20}$/.test(phone)) {
+        this.updateMessage = 'Введите корректный номер телефона'
+        this.updateMessageType = 'error'
+        this.updating = false
+        return
+      }
+
+      if (password && password.length < 6) {
+        this.updateMessage = 'Новый пароль должен быть не короче 6 символов'
+        this.updateMessageType = 'error'
+        this.updating = false
+        return
+      }
+
+      if (password && password !== passwordConfirmation) {
+        this.updateMessage = 'Пароли не совпадают'
+        this.updateMessageType = 'error'
+        this.updating = false
+        return
+      }
       
       const token = localStorage.getItem('token')
       
@@ -591,7 +680,7 @@ export default {
     },
     
     async depositMoney() {
-      if (!this.transactionAmount || this.transactionAmount < 1) {
+      if (!Number.isFinite(this.transactionAmount) || this.transactionAmount < 1) {
         alert('Введите корректную сумму')
         return
       }
@@ -628,7 +717,7 @@ export default {
     },
     
     async withdrawMoney() {
-      if (!this.transactionAmount || this.transactionAmount < 1) {
+      if (!Number.isFinite(this.transactionAmount) || this.transactionAmount < 1) {
         alert('Введите корректную сумму')
         return
       }
@@ -675,7 +764,7 @@ export default {
         return
       }
       
-      if (!this.transactionAmount || this.transactionAmount < 1) {
+      if (!Number.isFinite(this.transactionAmount) || this.transactionAmount < 1) {
         alert('Введите корректную сумму')
         return
       }
@@ -784,6 +873,15 @@ export default {
         'frozen': 'Заморожен',
         'paid': 'Выплачен',
         'refunded': 'Возвращен'
+      }
+      return statuses[status] || status
+    },
+
+    getApplicationStatusText(status) {
+      const statuses = {
+        pending: 'На рассмотрении',
+        accepted: 'Принята',
+        rejected: 'Отклонена'
       }
       return statuses[status] || status
     }

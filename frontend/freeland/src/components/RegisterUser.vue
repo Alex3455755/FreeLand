@@ -85,7 +85,29 @@ const getCsrfToken = () => {
   return token || ''
 }
 
+const validateForm = () => {
+  const fullName = form.full_name.trim()
+  const phone = form.phone.trim()
+  const login = form.login.trim()
+  const password = form.password
+
+  if (fullName.length < 2) return 'Введите корректное ФИО'
+  if (!/^\+?[0-9\s\-()]{7,20}$/.test(phone)) return 'Введите корректный номер телефона'
+  if (login.length < 3) return 'Логин должен быть не короче 3 символов'
+  if (password.length < 6) return 'Пароль должен быть не короче 6 символов'
+  if (!form.role) return 'Выберите роль'
+
+  return ''
+}
+
 const handleRegister = async () => {
+  const validationError = validateForm()
+  if (validationError) {
+    message.value = validationError
+    messageType.value = 'error'
+    return
+  }
+
   submitting.value = true
   message.value = ''
   

@@ -487,8 +487,32 @@ export default {
     
     // Отправка нового проекта
     async submitNewProject() {
-      if (!this.newProject.title) {
+      const title = String(this.newProject.title || '').trim();
+      const description = String(this.newProject.description || '').trim();
+      const budget = Number(this.newProject.budget);
+
+      if (!title) {
         this.showNotification('Введите название проекта', 'error');
+        return;
+      }
+
+      if (title.length < 5) {
+        this.showNotification('Название проекта должно быть не короче 5 символов', 'error');
+        return;
+      }
+
+      if (description && description.length < 10) {
+        this.showNotification('Описание должно быть не короче 10 символов', 'error');
+        return;
+      }
+
+      if (this.newProject.budget !== null && this.newProject.budget !== '' && (Number.isNaN(budget) || budget < 0)) {
+        this.showNotification('Бюджет должен быть числом не меньше 0', 'error');
+        return;
+      }
+
+      if (this.newProject.deadline && this.newProject.deadline < this.today) {
+        this.showNotification('Дедлайн не может быть в прошлом', 'error');
         return;
       }
       

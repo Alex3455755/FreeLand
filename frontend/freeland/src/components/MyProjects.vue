@@ -573,8 +573,36 @@ export default {
     
     // Обновление проекта
     async updateProject() {
-      if (!this.editingProject.title) {
+      const title = String(this.editingProject.title || '').trim()
+      const description = String(this.editingProject.description || '').trim()
+      const budget = Number(this.editingProject.budget)
+
+      if (!title) {
         alert('Введите название проекта')
+        return
+      }
+
+      if (title.length < 5) {
+        alert('Название проекта должно быть не короче 5 символов')
+        return
+      }
+
+      if (description && description.length < 10) {
+        alert('Описание проекта должно быть не короче 10 символов')
+        return
+      }
+
+      if (
+        this.editingProject.budget !== null &&
+        this.editingProject.budget !== '' &&
+        (Number.isNaN(budget) || budget < 0)
+      ) {
+        alert('Бюджет должен быть числом не меньше 0')
+        return
+      }
+
+      if (this.editingProject.deadline && this.editingProject.deadline < this.today) {
+        alert('Дедлайн не может быть в прошлом')
         return
       }
       

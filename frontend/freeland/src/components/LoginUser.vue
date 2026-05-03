@@ -108,8 +108,28 @@ const errors = reactive({
   password: ''
 })
 
-const validateField = () => {
-  // ... ваша валидация
+const validateField = (field) => {
+  if (field === 'login') {
+    const value = String(form.login || '').trim()
+    if (!value) {
+      errors.login = 'Введите логин'
+    } else if (value.length < 3) {
+      errors.login = 'Логин должен быть не короче 3 символов'
+    } else {
+      errors.login = ''
+    }
+  }
+
+  if (field === 'password') {
+    const value = String(form.password || '')
+    if (!value) {
+      errors.password = 'Введите пароль'
+    } else if (value.length < 6) {
+      errors.password = 'Пароль должен быть не короче 6 символов'
+    } else {
+      errors.password = ''
+    }
+  }
 }
 
 const isFormValid = computed(() => {

@@ -695,6 +695,49 @@ export default {
     
     async saveItem() {
       try {
+        if (this.modalType === 'user') {
+          if (!String(this.modalData.login || '').trim()) {
+            this.showNotification('Логин обязателен', 'error');
+            return;
+          }
+        }
+
+        if (this.modalType === 'project') {
+          if (!String(this.modalData.title || '').trim()) {
+            this.showNotification('Название проекта обязательно', 'error');
+            return;
+          }
+          if (!this.modalData.customer_id) {
+            this.showNotification('Выберите заказчика проекта', 'error');
+            return;
+          }
+        }
+
+        if (this.modalType === 'categorie') {
+          if (!String(this.modalData.name || '').trim()) {
+            this.showNotification('Название категории обязательно', 'error');
+            return;
+          }
+        }
+
+        if (this.modalType === 'comment') {
+          if (!this.modalData.user_id || !String(this.modalData.text || '').trim()) {
+            this.showNotification('Заполните автора и текст комментария', 'error');
+            return;
+          }
+        }
+
+        if (this.modalType === 'payment') {
+          if (!this.modalData.sender_id || !this.modalData.project_id) {
+            this.showNotification('Укажите отправителя и получателя', 'error');
+            return;
+          }
+          if (!Number.isFinite(Number(this.modalData.amount)) || Number(this.modalData.amount) <= 0) {
+            this.showNotification('Сумма платежа должна быть больше 0', 'error');
+            return;
+          }
+        }
+
         let url = `${this.apiBaseUrl}/api/${this.modalType}s/add`;
         
         if (this.isEditing) {

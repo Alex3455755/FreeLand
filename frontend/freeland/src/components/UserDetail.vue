@@ -622,6 +622,11 @@ export default {
         this.showNotification('Введите текст отзыва', 'error');
         return;
       }
+
+      if (this.reviewForm.text.trim().length < 10) {
+        this.showNotification('Текст отзыва должен быть не короче 10 символов', 'error');
+        return;
+      }
       
       this.reviewSubmitting = true;
       const token = localStorage.getItem('token');
