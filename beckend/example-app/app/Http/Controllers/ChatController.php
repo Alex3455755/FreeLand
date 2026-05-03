@@ -76,6 +76,12 @@ class ChatController extends Controller
     public function show(Request $request, Chat $chat)
     {
         $this->authorizeParticipant($request, $chat);
+        $userId = $this->resolveUserId($request);
+
+        Message::where('chat_id', $chat->id)
+            ->where('author_id', '!=', $userId)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
 
         $chat->load([
             'author',
@@ -85,6 +91,29 @@ class ChatController extends Controller
         ]);
 
         return response()->json($chat);
+    }
+
+    /**
+     * Количество непрочитанных сообщений
+     */
+    public function unreadCount(Request $request)
+    {
+        $userId = $this->resolveUserId($request);
+
+        $count = Message::whereHas('chat', function ($query) use ($userId) {
+                $query->where(function ($q) use ($userId) {
+                    $q->where('author_id', $userId)
+                        ->orWhere('interlocutor_id', $userId);
+                });
+            })
+            ->where('author_id', '!=', $userId)
+            ->whereNull('read_at')
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'unread_count' => $count,
+        ]);
     }
 
     /**

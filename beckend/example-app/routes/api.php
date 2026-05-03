@@ -50,6 +50,8 @@ Route::post('/login', [LoginController::class, 'login'])
     ->middleware([\Illuminate\Session\Middleware\StartSession::class]);
 //Регистрация
 Route::post('/registred',[RegisterController::class,'registred']);
+Route::post('/verify-email-code',[RegisterController::class,'verifyEmailCode']);
+Route::post('/resend-email-code',[RegisterController::class,'resendEmailCode']);
 
 //Users
 Route::get('/users',[UserController::class,'index']);
@@ -122,6 +124,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::middleware('auth:sanctum')->group(function () {
 
     // Чаты
+    Route::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'store']);
     Route::get('/chats/{chat}', [ChatController::class, 'show']);

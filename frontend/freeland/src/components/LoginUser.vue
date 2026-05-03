@@ -7,14 +7,14 @@
       <form @submit.prevent="handleLogin" class="login-form">
         <!-- Поле логина -->
         <div class="form-group">
-          <label for="login" class="form-label">Логин</label>
+          <label for="login" class="form-label">Email</label>
           <input
             type="text"
             id="login"
             v-model="form.login"
             class="form-input ios-glass"
             :class="{ 'error': errors.login }"
-            placeholder="Введите логин"
+            placeholder="Введите email"
             @blur="validateField('login')"
           />
           <span v-if="errors.login" class="error-message">{{ errors.login }}</span>
@@ -169,6 +169,9 @@ const handleLogin = async () => {
       
     } else {
       authError.value = data.message || 'Ошибка авторизации'
+      if (data.requires_verification) {
+        authError.value += '\nПодтвердите email через код из письма.'
+      }
     }
 
   } catch (error) {

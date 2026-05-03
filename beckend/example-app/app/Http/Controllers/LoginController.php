@@ -17,6 +17,14 @@ class LoginController extends Controller
                 'message' => 'Неверный логин или пароль'
             ], 401);
         }
+
+        if (!$user->email_verified_at) {
+            return response()->json([
+                'success' => false,
+                'requires_verification' => true,
+                'message' => 'Подтвердите email перед входом',
+            ], 403);
+        }
         
         // Создаем токен
         $token = $user->createToken('auth-token')->plainTextToken;

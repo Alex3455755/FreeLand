@@ -14,10 +14,12 @@ class Message extends Model
         'author_id',
         'text',
         'time',
+        'read_at',
     ];
 
     protected $casts = [
         'time' => 'datetime',
+        'read_at' => 'datetime',
     ];
 
     // ===== Связи =====

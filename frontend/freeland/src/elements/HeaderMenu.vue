@@ -6,7 +6,7 @@
           <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">FreeLand</router-link>
         </div>
         
-        <div class="nav-menu">
+        <div class="nav-menu" :class="{ open: mobileMenuOpen }">
           
           <router-link to="/freelancer" class="nav-link" :class="{ active: $route.path === '/freelancer' }">Фрилансеры</router-link>
           <router-link to="/projects" class="nav-link" :class="{ active: $route.path === '/projects' }">Заказы</router-link>
@@ -26,8 +26,10 @@
             to="/my-chats"
             class="nav-link"
             :class="{ active: $route.path === '/my-chats' }"
+            @click="mobileMenuOpen = false"
           >
             Чаты
+            <span v-if="unreadMessagesCount > 0" class="unread-badge">{{ unreadMessagesCount }}</span>
           </router-link>
           
           <!-- Админ панель только для админов -->
@@ -81,11 +83,42 @@
         </button>
       </nav>
     </div>
+
+    <div v-if="mobileMenuOpen" class="mobile-overlay" @click="mobileMenuOpen = false"></div>
+    <div class="mobile-drawer ios-glass" :class="{ open: mobileMenuOpen }">
+      <router-link to="/" class="nav-link" @click="mobileMenuOpen = false">Главная</router-link>
+      <router-link to="/freelancer" class="nav-link" @click="mobileMenuOpen = false">Фрилансеры</router-link>
+      <router-link to="/projects" class="nav-link" @click="mobileMenuOpen = false">Заказы</router-link>
+      <router-link
+        v-if="user && (user.role === 'customer' || user.role === 'freelancer' || user.role === 'заказчик' || user.role === 'фрилансер')"
+        to="/my-projects"
+        class="nav-link"
+        @click="mobileMenuOpen = false"
+      >
+        Мои проекты
+      </router-link>
+      <router-link v-if="user" to="/my-chats" class="nav-link" @click="mobileMenuOpen = false">
+        Чаты
+        <span v-if="unreadMessagesCount > 0" class="unread-badge">{{ unreadMessagesCount }}</span>
+      </router-link>
+      <router-link v-if="user?.role === 'admin'" to="/admin" class="nav-link" @click="mobileMenuOpen = false">
+        Админ панель
+      </router-link>
+
+      <div v-if="!user" class="mobile-actions">
+        <router-link class="nav-button login" to="/login" @click="mobileMenuOpen = false">Войти</router-link>
+        <router-link class="nav-button register ios-glass" to="/register" @click="mobileMenuOpen = false">Регистрация</router-link>
+      </div>
+      <div v-else class="mobile-actions">
+        <router-link to="/profile" class="nav-link" @click="mobileMenuOpen = false">Профиль</router-link>
+        <button class="nav-button logout" @click="logout">Выйти</button>
+      </div>
+    </div>
   </header>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
@@ -93,6 +126,9 @@ const route = useRoute()
 
 const user = ref(null)
 const loading = ref(true)
+const mobileMenuOpen = ref(false)
+const unreadMessagesCount = ref(0)
+let unreadInterval = null
 const API_URL = '/api'
 
 // Получить текущего пользователя
@@ -117,6 +153,7 @@ const fetchUser = async () => {
     
     if (response.ok && data.success) {
       user.value = data.user
+      await fetchUnreadCount()
     } else {
       // Токен невалидный
       localStorage.removeItem('token')
@@ -128,6 +165,29 @@ const fetchUser = async () => {
     user.value = null
   } finally {
     loading.value = false
+  }
+}
+
+const fetchUnreadCount = async () => {
+  const token = localStorage.getItem('token')
+  if (!token || !user.value) {
+    unreadMessagesCount.value = 0
+    return
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/chats/unread-count`, {
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      }
+    })
+    const data = await response.json()
+    if (response.ok && data.success) {
+      unreadMessagesCount.value = Number(data.unread_count || 0)
+    }
+  } catch (error) {
+    unreadMessagesCount.value = 0
   }
 }
 
@@ -152,6 +212,8 @@ const logout = async () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     user.value = null
+    unreadMessagesCount.value = 0
+    mobileMenuOpen.value = false
     
     await router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
   }
@@ -180,12 +242,16 @@ const getRoleText = (role) => {
 
 // Мобильное меню
 const toggleMobileMenu = () => {
-  // Здесь можно добавить логику для мобильного меню
-  console.log('Toggle mobile menu')
+  mobileMenuOpen.value = !mobileMenuOpen.value
 }
 
 onMounted(() => {
   fetchUser()
+  unreadInterval = setInterval(fetchUnreadCount, 10000)
+})
+
+onBeforeUnmount(() => {
+  if (unreadInterval) clearInterval(unreadInterval)
 })
 </script>
 
@@ -237,6 +303,21 @@ onMounted(() => {
   border-radius: 20px;
   transition: all 0.3s ease;
   position: relative;
+}
+
+.unread-badge {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: #ff4d4f;
+  color: #fff;
 }
 
 .nav-link:hover {
@@ -398,6 +479,39 @@ onMounted(() => {
   padding: 8px;
 }
 
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+.mobile-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(320px, 90vw);
+  z-index: 999;
+  transform: translateX(110%);
+  transition: transform 0.25s ease;
+  padding: 80px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-drawer.open {
+  transform: translateX(0);
+}
+
+.mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 .bar {
   width: 30px;
   height: 3px;
@@ -446,6 +560,7 @@ onMounted(() => {
 
   .mobile-menu-toggle {
     display: flex;
+    z-index: 1001;
   }
 
   .logo-text {

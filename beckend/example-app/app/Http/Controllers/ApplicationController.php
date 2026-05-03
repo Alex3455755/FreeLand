@@ -4,12 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Chat;
+use App\Services\PhpMailerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class ApplicationController extends Controller
 {
+    private PhpMailerService $mailer;
+
+    public function __construct(PhpMailerService $mailer)
+    {
+        $this->mailer = $mailer;
+    }
     /**
      * Все заявки пользователя
      */
@@ -67,6 +74,8 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_ACCEPTED,
         ]);
 
+        $this->sendApplicationStatusEmail($application, true);
+
         // Синхронизируем проект с принятым исполнителем
         $project->update([
             'freelancer_id' => $freelancerId,
@@ -100,6 +109,8 @@ class ApplicationController extends Controller
         $application->update([
             'status' => Application::STATUS_REJECTED,
         ]);
+
+        $this->sendApplicationStatusEmail($application, false);
 
         return response()->json($application);
     }
@@ -144,5 +155,26 @@ class ApplicationController extends Controller
     private function resolveUserId(Request $request): ?int
     {
         return $request->user()?->id ?? Auth::id();
+    }
+
+    private function sendApplicationStatusEmail(Application $application, bool $accepted): void
+    {
+        $application->loadMissing(['user', 'project']);
+        $freelancer = $application->user;
+        if (!$freelancer || !$freelancer->login) {
+            return;
+        }
+
+        $projectTitle = $application->project?->title ?: ('#' . $application->project_id);
+        $name = $freelancer->full_name ?: $freelancer->login;
+        $subject = $accepted ? 'Ваша заявка принята' : 'Ваша заявка отклонена';
+        $statusText = $accepted ? 'принята' : 'отклонена';
+
+        $this->mailer->send(
+            $freelancer->login,
+            $name,
+            $subject,
+            "Здравствуйте, {$name}!<br><br>Ваша заявка по проекту <b>{$projectTitle}</b> была {$statusText}."
+        );
     }
 }

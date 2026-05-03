@@ -18,8 +18,8 @@
         </div>
 
         <div class="form-group">
-          <label>Логин</label>
-          <input v-model="form.login" type="text" required />
+          <label>Email</label>
+          <input v-model="form.login" type="email" placeholder="name@example.com" required />
         </div>
 
         <!-- <div class="form-group">
@@ -51,6 +51,20 @@
 
       </form>
 
+      <div v-if="verificationRequired" class="verification-box">
+        <h3>Подтверждение email</h3>
+        <p>Введите код, отправленный на {{ verificationLogin }}</p>
+        <input v-model="verificationCode" type="text" maxlength="6" placeholder="6-значный код" />
+        <div class="verification-actions">
+          <button class="submit-button" :disabled="submitting" @click="verifyCode">
+            {{ submitting ? 'Проверка...' : 'Подтвердить email' }}
+          </button>
+          <button class="submit-button resend" :disabled="submitting" @click="resendCode">
+            Отправить код повторно
+          </button>
+        </div>
+      </div>
+
       <div v-if="message" class="form-message" :class="messageType">
         {{ message }}
       </div>
@@ -78,6 +92,9 @@ const form = reactive({
 const message = ref('')
 const messageType = ref('info')
 const submitting = ref(false)
+const verificationRequired = ref(false)
+const verificationCode = ref('')
+const verificationLogin = ref('')
 
 // Простая функция для получения CSRF токена (если нужен)
 const getCsrfToken = () => {
@@ -138,18 +155,21 @@ const handleRegister = async () => {
 
     if (response.ok) {
       if (data.success === true || data.message === 'Пользователь успешно создан' || data.user) {
+        verificationRequired.value = Boolean(data.requires_verification)
+        verificationLogin.value = data.login || form.login
         message.value = data.message || 'Регистрация успешна!'
         messageType.value = 'success'
-        
-        form.full_name = ''
-        form.phone = ''
-        form.login = ''
-        form.avatar = ''
-        form.password = ''
-        form.role = ''
-        setTimeout(() => {
-          router.push('/login')
-        }, 2000)
+        if (!verificationRequired.value) {
+          form.full_name = ''
+          form.phone = ''
+          form.login = ''
+          form.avatar = ''
+          form.password = ''
+          form.role = ''
+          setTimeout(() => {
+            router.push('/login')
+          }, 1500)
+        }
       } else {
         throw new Error(data.message || 'Ошибка при регистрации')
       }
@@ -165,6 +185,70 @@ const handleRegister = async () => {
   } catch (error) {
     console.error('Детали ошибки:', error)
     message.value = error.message || 'Произошла ошибка при регистрации'
+    messageType.value = 'error'
+  } finally {
+    submitting.value = false
+  }
+}
+
+const verifyCode = async () => {
+  if (verificationCode.value.trim().length !== 6) {
+    message.value = 'Введите 6-значный код'
+    messageType.value = 'error'
+    return
+  }
+
+  submitting.value = true
+  try {
+    const response = await fetch(`${API_URL}/api/verify-email-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken()
+      },
+      body: JSON.stringify({
+        login: verificationLogin.value,
+        code: verificationCode.value.trim()
+      })
+    })
+    const data = await response.json()
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Не удалось подтвердить email')
+    }
+
+    message.value = data.message || 'Email подтвержден'
+    messageType.value = 'success'
+    verificationRequired.value = false
+    setTimeout(() => router.push('/login'), 1200)
+  } catch (error) {
+    message.value = error.message || 'Ошибка подтверждения'
+    messageType.value = 'error'
+  } finally {
+    submitting.value = false
+  }
+}
+
+const resendCode = async () => {
+  submitting.value = true
+  try {
+    const response = await fetch(`${API_URL}/api/resend-email-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': getCsrfToken()
+      },
+      body: JSON.stringify({ login: verificationLogin.value })
+    })
+    const data = await response.json()
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || 'Не удалось отправить код повторно')
+    }
+    message.value = data.message || 'Новый код отправлен'
+    messageType.value = 'success'
+  } catch (error) {
+    message.value = error.message || 'Ошибка отправки кода'
     messageType.value = 'error'
   } finally {
     submitting.value = false
@@ -365,6 +449,41 @@ const handleRegister = async () => {
   background: rgba(52, 152, 219, 0.2);
   border: 1px solid rgba(52, 152, 219, 0.4);
   color: #3498db;
+}
+
+.verification-box {
+  margin-top: 18px;
+  text-align: left;
+}
+
+.verification-box h3 {
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.verification-box p {
+  color: #d9ecff;
+  margin-bottom: 10px;
+}
+
+.verification-box input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  background: rgba(10, 77, 140, 0.2);
+  color: #fff;
+}
+
+.verification-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.submit-button.resend {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* 📱 Мобильная версия */

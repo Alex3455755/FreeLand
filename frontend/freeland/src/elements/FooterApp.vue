@@ -15,7 +15,7 @@
 <style scoped>
 /* Footer */
 .footer {
-  margin-top: 40px;
+  margin-top: auto;
   flex-shrink: 0;
   padding: 80px 0 50px;
   text-align: center;
@@ -51,6 +51,11 @@
 
 /* Responsive */
 @media (max-width: 480px) {
+  .footer {
+    padding: 48px 0 28px;
+    border-radius: 24px 24px 0 0;
+  }
+
   .footer-links a {
     display: inline-block;
     margin: 10px;

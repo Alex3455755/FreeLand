@@ -17,60 +17,176 @@ import NotFound from '@/components/NotFound.vue'
 import StatePage from '@/components/StatePage.vue'
 
 const routes = [
-    { path: '/', component: HomePage },
-    {path: '/register', component: RegisterUser},
-    {path: '/login', component: LoginUser},
-    {path: '/projects', component: ProjectPage},
-    {path: '/projectDetail',component:ProjectDetail},
+    {
+    path: '/',
+    component: HomePage,
+    meta: {
+      title: 'FreeLand - Фриланс платформа',
+      description: 'Платформа для поиска фрилансеров и публикации проектов.',
+      keywords: 'фриланс, проекты, заказчики, исполнители'
+    }
+  },
+    {
+    path: '/register',
+    component: RegisterUser,
+    meta: {
+      title: 'Регистрация - FreeLand',
+      description: 'Создайте аккаунт на FreeLand и начните работу.',
+      keywords: 'регистрация, аккаунт, freelance'
+    }
+  },
+    {
+    path: '/login',
+    component: LoginUser,
+    meta: {
+      title: 'Вход - FreeLand',
+      description: 'Войдите в аккаунт FreeLand.',
+      keywords: 'вход, авторизация, email'
+    }
+  },
+    {
+    path: '/projects',
+    component: ProjectPage,
+    meta: {
+      title: 'Проекты - FreeLand',
+      description: 'Актуальные проекты для фрилансеров.',
+      keywords: 'проекты, вакансии, заказ'
+    }
+  },
+    {
+    path: '/projectDetail',
+    component: ProjectDetail,
+    meta: {
+      title: 'Детали проекта - FreeLand',
+      description: 'Подробная информация о проекте.',
+      keywords: 'проект, детали, отклик'
+    }
+  },
       {
     path: '/projects/:id',
     name: 'project-detail',
     component: ProjectDetail,
     meta: {
-      title: 'Детали проекта | Freelance Platform'
+      title: 'Детали проекта - FreeLand',
+      description: 'Подробная информация о выбранном проекте.',
+      keywords: 'проект, фриланс, описание'
     }
   },
-  {path: '/freelancer', component: FreelancersPage},
+  {
+    path: '/freelancer',
+    component: FreelancersPage,
+    meta: {
+      title: 'Фрилансеры - FreeLand',
+      description: 'Каталог фрилансеров платформы.',
+      keywords: 'фрилансеры, специалисты, портфолио'
+    }
+  },
     {
     path: '/freelancers/:id',
     name: 'user-detail',
-    component: UserDetail
+    component: UserDetail,
+    meta: {
+      title: 'Профиль специалиста - FreeLand',
+      description: 'Просмотр профиля и отзывов специалиста.',
+      keywords: 'профиль, отзывы, специалист'
+    }
   },
   {
     path: '/users/:id',
     name: 'user-detail-alt',
-    component: UserDetail
+    component: UserDetail,
+    meta: {
+      title: 'Профиль пользователя - FreeLand',
+      description: 'Детальная информация о пользователе.',
+      keywords: 'пользователь, профиль'
+    }
   },
   {
     path: '/admin',
-    component: AdminPage
+    component: AdminPage,
+    meta: {
+      title: 'Админ панель - FreeLand',
+      description: 'Панель управления платформой.',
+      keywords: 'админ, управление, модерация'
+    }
   },{
     path: '/my-projects',
-    component: MyProjects
+    component: MyProjects,
+    meta: {
+      title: 'Мои проекты - FreeLand',
+      description: 'Управление вашими проектами и заявками.',
+      keywords: 'мои проекты, заявки, управление'
+    }
   },{
     path: '/my-chats',
-    component: MyChats
+    component: MyChats,
+    meta: {
+      title: 'Мои чаты - FreeLand',
+      description: 'Общение с заказчиками и исполнителями.',
+      keywords: 'чаты, сообщения, проект'
+    }
   },{
     path: '/profile',
-    component: ProfilPage
+    component: ProfilPage,
+    meta: {
+      title: 'Мой профиль - FreeLand',
+      description: 'Личный кабинет пользователя FreeLand.',
+      keywords: 'профиль, кабинет, баланс'
+    }
   },{
     path: '/emploee',
-    component: EmploeyPage
+    component: EmploeyPage,
+    meta: {
+      title: 'Команда и отзывы - FreeLand',
+      description: 'Информация о команде и отзывы пользователей.',
+      keywords: 'команда, отзывы, контакты'
+    }
   },{
     path: '/article',
     name: 'ArticlePage',
     component: StatePage,
+    meta: {
+      title: 'Статьи - FreeLand',
+      description: 'Полезные статьи и материалы.',
+      keywords: 'статьи, блог, советы'
+    }
   },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: NotFound
+    component: NotFound,
+    meta: {
+      title: 'Страница не найдена - FreeLand',
+      description: 'Запрошенная страница не найдена.',
+      keywords: '404, not found'
+    }
   }
 ]
 
 const router = createRouter({
     history: createWebHistory(),
     routes
+})
+
+const setOrCreateMeta = (name, content) => {
+  let meta = document.querySelector(`meta[name="${name}"]`)
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.setAttribute('name', name)
+    document.head.appendChild(meta)
+  }
+  meta.setAttribute('content', content)
+}
+
+router.afterEach((to) => {
+  const title = to.meta?.title || 'FreeLand'
+  const description = to.meta?.description || 'Платформа для фрилансеров и заказчиков.'
+  const keywords = to.meta?.keywords || 'freeland, freelance'
+
+  document.title = title
+  setOrCreateMeta('description', description)
+  setOrCreateMeta('keywords', keywords)
+  setOrCreateMeta('robots', 'index, follow')
 })
 
 export default router
