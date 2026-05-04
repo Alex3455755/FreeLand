@@ -26,8 +26,8 @@
     <section class="hero-banner">
       <div class="container">
         <div class="banner-content ios-glass ios-glass-heavy">
-          <h1>Всем зарегистрировавшимся сейчас</h1>
-          <h2 class="highlight">МЕСЯЦ ПЕРЕВОДЫ БЕЗ КОМИССИИ</h2>
+          <h1>У нас самые выгодные условия работы</h1>
+          <h2 class="highlight">комиссия не более 5% и никаких скрытых платежей</h2>
           <button @click="handleStartButton" class="cta-button ios-glass ios-glass-heavy">
             <span class="button-text">{{ startButtonText }}</span>
             <span class="button-glow"></span>

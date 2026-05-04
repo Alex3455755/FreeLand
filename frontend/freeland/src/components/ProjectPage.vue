@@ -136,95 +136,98 @@
     </div>
 
     <!-- Модальное окно добавления проекта -->
-    <div v-if="showAddProjectModal" class="modal-overlay" @click.self="closeAddProjectModal">
-      <div class="modal-container ios-glass">
-        <div class="modal-header">
-          <div>
-            <h2 class="modal-title">Создание нового проекта</h2>
-            <p class="modal-subtitle">Заполните форму и опубликуйте задачу</p>
-          </div>
-          <button @click="closeAddProjectModal" class="modal-close">×</button>
-        </div>
-        
-        <form @submit.prevent="submitNewProject" class="modal-form">
-          <div v-if="projectFormMessage" class="form-message" :class="projectFormMessageType">
-            {{ projectFormMessage }}
-          </div>
+<div v-if="showAddProjectModal" class="modal-overlay" @click.self="closeAddProjectModal">
+  <div class="modal-content login-card ios-glass ios-glass-heavy">
+    
+    <h2 class="login-title">Создание проекта</h2>
 
-          <div class="form-group">
-            <label>Название проекта <span class="required">*</span></label>
-            <input 
-              v-model="newProject.title" 
-              type="text" 
-              class="form-input ios-glass" 
-              required
-              placeholder="Введите название проекта"
-            >
-          </div>
-          
-          <div class="form-group">
-            <label>Описание</label>
-            <textarea 
-              v-model="newProject.description" 
-              class="form-input ios-glass" 
-              rows="4"
-              placeholder="Опишите ваш проект"
-            ></textarea>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>Бюджет (₽)</label>
-              <input 
-                v-model.number="newProject.budget" 
-                type="number" 
-                class="form-input ios-glass"
-                placeholder="Например: 50000"
-                min="0"
-              >
-            </div>
-            
-            <div class="form-group">
-              <label>Дедлайн</label>
-              <input 
-                v-model="newProject.deadline" 
-                type="date" 
-                class="form-input ios-glass"
-                :min="today"
-              >
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>Категория</label>
-            <select v-model="newProject.category_id" class="form-input ios-glass">
-              <option value="">Выберите категорию</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="form-group">
-            <label>Статус</label>
-            <select v-model="newProject.status" class="form-input ios-glass">
-              <option value="open">Открыт</option>
-              <option value="in_progress">В работе</option>
-              <option value="completed">Завершен</option>
-            </select>
-          </div>
-          
-          <div class="modal-actions">
-            <button type="button" @click="closeAddProjectModal" class="modal-button cancel">
-              Отмена
-            </button>
-            <button type="submit" class="modal-button submit" :disabled="submitting">
-              <span v-if="submitting" class="button-spinner"></span>
-              {{ submitting ? 'Создание...' : 'Создать проект' }}
-            </button>
-          </div>
-        </form>
+    <form @submit.prevent="submitNewProject" class="login-form">
+
+      <!-- Сообщение -->
+      <div v-if="projectFormMessage" class="alert" :class="{
+        'alert-error': projectFormMessageType === 'error',
+        'alert-success': projectFormMessageType === 'success'
+      }">
+        {{ projectFormMessage }}
       </div>
+
+      <!-- Название -->
+      <div class="form-group">
+        <label class="form-label">Название проекта</label>
+        <input 
+          v-model="newProject.title"
+          type="text"
+          class="form-input ios-glass"
+          placeholder="Введите название проекта"
+        >
+      </div>
+
+      <!-- Описание -->
+      <div class="form-group">
+        <label class="form-label">Описание</label>
+        <textarea 
+          v-model="newProject.description"
+          class="form-input ios-glass"
+          rows="4"
+          placeholder="Опишите проект"
+        ></textarea>
+      </div>
+
+      <!-- Бюджет -->
+      <div class="form-group">
+        <label class="form-label">Бюджет</label>
+        <input 
+          v-model.number="newProject.budget"
+          type="number"
+          class="form-input ios-glass"
+          placeholder="Например: 50000"
+        >
+      </div>
+
+      <!-- Дедлайн -->
+      <div class="form-group">
+        <label class="form-label">Дедлайн</label>
+        <input 
+          v-model="newProject.deadline"
+          type="date"
+          class="form-input ios-glass"
+          :min="today"
+        >
+      </div>
+
+      <!-- Категория -->
+      <div class="form-group">
+        <label class="form-label">Категория</label>
+        <select v-model="newProject.category_id" class="form-input ios-glass">
+          <option value="">Выберите категорию</option>
+          <option v-for="c in categories" :key="c.id" :value="c.id">
+            {{ c.name }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Кнопки -->
+      <div class="form-actions">
+        <button 
+          type="button"
+          class="secondary-button"
+          @click="closeAddProjectModal"
+        >
+          Отмена
+        </button>
+
+        <button 
+          type="submit"
+          class="login-button ios-glass ios-glass-heavy"
+          :disabled="submitting"
+        >
+          <span v-if="!submitting">Создать проект</span>
+          <span v-else class="loader"></span>
+        </button>
+      </div>
+
+    </form>
+  </div>
     </div>
 
     <!-- Модальное окно заявки на новую категорию -->
@@ -1533,6 +1536,134 @@ select.form-input option {
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   margin-right: 8px;
+}
+
+/* Контейнер модалки — как login */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+/* Карточка уже использует login-card */
+
+/* Форма */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* Группы */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Лейблы */
+.form-label {
+  color: #F0F8FF;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+/* Инпуты */
+.form-input {
+  width: 100%;
+  padding: 15px 20px;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  border-radius: 16px;
+  font-size: 1rem;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.5);
+  box-shadow: 0 0 20px rgba(168, 209, 255, 0.2);
+}
+
+/* textarea */
+textarea.form-input {
+  resize: vertical;
+}
+
+/* select */
+select.form-input {
+  cursor: pointer;
+}
+
+/* Кнопки */
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+/* secondary */
+.secondary-button {
+  flex: 1;
+  padding: 16px;
+  border-radius: 9999px;
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.secondary-button:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+/* alert */
+.alert {
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.alert-error {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  color: #ffb3b3;
+}
+
+.alert-success {
+  background: rgba(46, 204, 113, 0.15);
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #a2f5c4;
+}
+
+/* loader */
+.loader {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.modal-content {
+  width: 90%;
+  max-width: 520px;
+  padding: 30px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 768px) {

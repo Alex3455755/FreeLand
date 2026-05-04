@@ -1546,6 +1546,328 @@ export default {
   padding: 20px;
 }
 
+/* =========================
+   MODAL FORM — GLASS STYLE
+========================= */
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Группы */
+.modal-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-form label {
+  font-size: 0.95rem;
+  color: #A8D1FF;
+  font-weight: 500;
+}
+
+/* Инпут */
+.modal-form .form-input {
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(10, 77, 140, 0.25);
+  border: 1px solid rgba(168, 209, 255, 0.25);
+  color: #FFFFFF;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.modal-form .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-form .form-input:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.5);
+  background: rgba(10, 77, 140, 0.35);
+  box-shadow: 0 0 0 3px rgba(168, 209, 255, 0.15);
+}
+
+/* Инпут суммы */
+.modal-form input[type="number"] {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* Подсказка */
+.form-hint {
+  font-size: 0.85rem;
+  color: #A8D1FF;
+  opacity: 0.8;
+}
+
+/* =========================
+   QUICK AMOUNTS
+========================= */
+
+.quick-amounts {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-amounts button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(168, 209, 255, 0.1);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  color: #A8D1FF;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-amounts button:hover {
+  background: rgba(168, 209, 255, 0.25);
+  color: #FFFFFF;
+  transform: translateY(-1px);
+}
+
+/* =========================
+   COMMISSION BLOCK
+========================= */
+
+.commission-info {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 77, 140, 0.25),
+    rgba(10, 77, 140, 0.1)
+  );
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  backdrop-filter: blur(15px);
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 0.95rem;
+  color: #F0F8FF;
+}
+
+.info-row:not(:last-child) {
+  border-bottom: 1px solid rgba(168, 209, 255, 0.1);
+}
+
+.info-row.total {
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 2px solid rgba(168, 209, 255, 0.2);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(168, 209, 255, 0.1);
+}
+
+.modal-button {
+  width: 100%;
+  padding: 15px 18px;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* cancel */
+.modal-button.cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  color: #F0F8FF;
+}
+
+.modal-button.cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* submit */
+.modal-button.submit {
+  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  border: none;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px rgba(10, 77, 140, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.modal-button.submit:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(10, 77, 140, 0.5);
+}
+
+.modal-button.submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   MODAL CONTAINER UPGRADE
+========================= */
+
+.modal-container {
+  max-width: 560px;
+  width: 100%;
+  padding: 40px 32px;
+  border-radius: 32px;
+  background: rgba(10, 77, 140, 0.15);
+  border: 1px solid rgba(168, 209, 255, 0.25);
+  backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 0 25px 50px rgba(8, 51, 88, 0.6);
+}
+
+/* =========================
+   ANIMATION (optional)
+========================= */
+
+.modal-container {
+  animation: modalFadeIn 0.3s ease;
+}
+
+/* =========================
+   UNIFIED MODAL FORM STYLE
+   (match login / register glass style)
+========================= */
+
+.modal-container {
+  background: rgba(10, 77, 140, 0.15);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(168, 209, 255, 0.22);
+  border-radius: 32px;
+  box-shadow: 0 20px 50px rgba(8, 51, 88, 0.6);
+}
+
+/* заголовок как в login */
+.modal-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 25px;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+}
+
+/* форма */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* label как в login */
+.modal-form label {
+  color: #F0F8FF;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* INPUT — полностью как login form-input */
+.modal-form .form-input {
+  width: 100%;
+  padding: 15px 20px;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  border-radius: 16px;
+  font-size: 1rem;
+  color: #FFFFFF;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.modal-form .form-input:focus {
+  outline: none;
+  border-color: rgba(168, 209, 255, 0.5);
+  box-shadow: 0 0 20px rgba(168, 209, 255, 0.2);
+  background: rgba(10, 77, 140, 0.3);
+}
+
+.modal-form .form-input::placeholder {
+  color: rgba(240, 248, 255, 0.5);
+}
+
+/* сумма — как “hero input” */
+.modal-form input[type="number"] {
+  text-align: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* комиссия блок — мягкий glass */
+.commission-info {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(10, 77, 140, 0.18);
+  border: 1px solid rgba(168, 209, 255, 0.18);
+  backdrop-filter: blur(15px);
+}
+
+/* кнопки — как login-button стиль */
+.modal-button.submit {
+  background: rgba(10, 77, 140, 0.4);
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  color: #fff;
+  border-radius: 9999px;
+  transition: all 0.3s ease;
+}
+
+.modal-button.submit:hover:not(:disabled) {
+  background: rgba(10, 77, 140, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(168, 209, 255, 0.2);
+}
+
+.modal-button.cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  border-radius: 9999px;
+  color: #F0F8FF;
+}
+
+/* overlay как login */
+.modal-overlay {
+  background: rgba(8, 51, 88, 0.75);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(25px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
