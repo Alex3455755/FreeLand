@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use PHPMailer\PHPMailer\PHPMailer;
 
 class RegisterController extends Controller
 {
@@ -18,6 +19,8 @@ class RegisterController extends Controller
 
     public function registred()
     {
+
+        $mail = new PHPMailer(true);
         request()->validate([
             'full_name' => ['required', 'string', 'min:2', 'max:255'],
             'phone' => ['nullable', 'string', 'max:40'],
@@ -27,7 +30,7 @@ class RegisterController extends Controller
         ]);
 
         // Временно отключено: email-верификация при регистрации
-        // $verificationCode = (string) random_int(100000, 999999);
+        $verificationCode = (string) random_int(100000, 999999);
 
         $user = User::create([
             'full_name' => request('full_name'),
@@ -50,6 +53,54 @@ class RegisterController extends Controller
         //     'Код подтверждения FreeLand',
         //     "Здравствуйте, {$name}!<br><br>Ваш код подтверждения: <b>{$verificationCode}</b><br><br>Если вы не регистрировались, просто проигнорируйте это письмо."
         // );
+
+         try {
+            $mail->SMTPDebug = 2;
+
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'alexeigyll@gmail.com';
+            $mail->Password = 'wjdd rplm hkhi ijhp';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+
+            $mail->SMTPOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ],
+            ];
+
+            $mail->setFrom('alexeigyll@gmail.com', 'freeland');
+            $mail->addAddress($user->login);
+
+            $mail->isHTML(true);
+            $mail->Subject = 'Код подтверждения';
+            $mail->Body = "Код для активации - {$verificationCode}";
+
+            $mail->SMTPDebug = 2;
+            $mail->Timeout = 10;
+            $mail->Debugoutput = function($str, $level) {
+                error_log("SMTP: $str");
+            };
+
+            if (!$mail->send()) {
+                throw new \Exception($mail->ErrorInfo);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Письмо отправлено'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
