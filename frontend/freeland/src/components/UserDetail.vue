@@ -42,7 +42,7 @@
             <div class="avatar-container">
               <div class="avatar-ring"></div>
               <div class="avatar-large">
-                {{ getInitials(user.full_name || user.name || user.login) }}
+                <img :src="userAvatar(user)" :alt="user.full_name || user.login || ''" />
               </div>
               <div class="rating-badge" v-if="user.rating || averageRating">
                 {{ Number(user.rating || averageRating || 0).toFixed(1) }} ★
@@ -109,7 +109,7 @@
                         <div class="details-card ios-glass">
               <h3 class="card-title">Контакты</h3>
               <div class="contact-info">
-                <div class="contact-item" v-if="user.email">>
+                <div class="contact-item" v-if="user.email">
                   <span class="contact-label">Email:</span>
                   <a :href="'mailto:' + user.email" class="contact-value">{{ user.email }}</a>
                 </div>
@@ -117,7 +117,7 @@
                   <span class="contact-label">Телефон:</span>
                   <a :href="'tel:' + user.phone" class="contact-value">{{ user.phone }}</a>
                 </div>
-                <div class="contact-item" v-if="user.telegram">>
+                <div class="contact-item" v-if="user.telegram">
                   <span class="contact-label">Telegram:</span>
                   <a :href="'https://t.me/' + user.telegram" target="_blank" class="contact-value">@{{ user.telegram }}</a>
                 </div>
@@ -205,7 +205,7 @@
           <div v-else-if="sortedReviews.length > 0" class="reviews-list">
             <div v-for="review in sortedReviews" :key="review.id" class="review-item">
               <div class="review-header">
-                <div class="reviewer-avatar">{{ getAuthorInitials(review.author_id) }}</div>
+                <img class="reviewer-avatar" :src="reviewerAvatar(review)" alt="" />
                 <div class="reviewer-info">
                   <div class="reviewer-name">{{ getAuthorName(review.author_id) }}</div>
                   <div class="review-date">{{ formatDate(review.created_at) }}</div>
@@ -298,6 +298,7 @@
 
 <script>
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import { avatarSrc } from '@/utils/avatar';
 
 export default {
   name: 'UserDetail',
@@ -352,10 +353,16 @@ export default {
     // Может ли текущий пользователь оставить отзыв
     canLeaveReview() {
       if (!this.currentUser || !this.user) return false;
-      // Нельзя оставить отзыв самому себе
       if (this.currentUser.id === this.user.id) return false;
-      // Проверяем, не оставлял ли уже отзыв
-      return !this.reviews.some(r => r.author_id === this.currentUser.id);
+      if (this.reviews.some(r => r.author_id === this.currentUser.id)) return false;
+
+      const authorRole = this.normalizeUserRole(this.currentUser.role);
+      const targetRole = this.normalizeUserRole(this.user.role);
+
+      if (authorRole === 'freelancer' && targetRole === 'customer') return true;
+      if (authorRole === 'customer' && targetRole === 'freelancer') return true;
+
+      return false;
     },
     
     // Отсортированные отзывы
@@ -384,6 +391,14 @@ export default {
   },
   
   methods: {
+    userAvatar(u) {
+      return avatarSrc(u, this.apiBaseUrl);
+    },
+    reviewerAvatar(review) {
+      const a = this.reviewAuthors[review.author_id];
+      if (a) return avatarSrc(a, this.apiBaseUrl);
+      return avatarSrc({ id: review.author_id }, this.apiBaseUrl);
+    },
     // Получение текущего пользователя
     async fetchCurrentUser() {
       const token = localStorage.getItem('token');
@@ -749,6 +764,15 @@ export default {
       this.$router.push(`/my-chats?user_id=${this.user.id}`);
     },
     
+    normalizeUserRole(role) {
+      if (role === null || role === undefined || role === '') return null;
+      const r = String(role).trim().toLowerCase();
+      if (['freelancer', 'фрилансер', '2'].includes(r) || role === 2) return 'freelancer';
+      if (['customer', 'заказчик', '1'].includes(r) || role === 1) return 'customer';
+      if (['admin', 'администратор', '3'].includes(r) || role === 3) return 'admin';
+      return null;
+    },
+
     formatRole(role) {
       const roleMap = {
         'freelancer': 'Фрилансер',
@@ -920,6 +944,15 @@ export default {
   position: relative;
   z-index: 2;
   box-shadow: 0 10px 30px rgba(8, 51, 88, 0.4);
+  overflow: hidden;
+}
+
+.avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .rating-badge {
@@ -1398,13 +1431,10 @@ export default {
   width: 50px;
   height: 50px;
   border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid rgba(168, 209, 255, 0.25);
   background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 1.2rem;
-  color: #FFFFFF;
 }
 
 .reviewer-info {

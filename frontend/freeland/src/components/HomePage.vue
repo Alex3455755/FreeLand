@@ -57,7 +57,7 @@
             <div class="avatar-container">
               <div class="avatar-ring"></div>
               <div class="avatar">
-                {{ getInitials(freelancer.full_name || freelancer.name || freelancer.login) }}
+                <img :src="avatarSrc(freelancer, API_URL)" alt="" />
               </div>
             </div>
             <h4>{{ freelancer.full_name || freelancer.name || freelancer.login }}</h4>
@@ -111,6 +111,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
 import FooterApp from '@/elements/FooterApp.vue'
+import { avatarSrc } from '@/utils/avatar'
 import '../assets/css/mainStyle.css'
 
 const router = useRouter()
@@ -224,12 +225,6 @@ const handleStartButton = () => {
 // Открыть профиль фрилансера
 const openFreelancerProfile = (id) => {
   router.push(`/freelancers/${id}`)
-}
-
-// Получить инициалы для аватара
-const getInitials = (name) => {
-  if (!name) return '?'
-  return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
 }
 
 // Получить звезды рейтинга

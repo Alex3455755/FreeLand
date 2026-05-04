@@ -55,14 +55,10 @@
           <router-link to="/profile" class="user-info-link">
             <div class="user-info">
               <img 
-                v-if="user.avatar" 
-                :src="user.avatar" 
-                :alt="user.full_name" 
+                :src="avatarSrc(user)" 
+                :alt="user.full_name || ''" 
                 class="user-avatar"
               />
-              <span v-else class="user-avatar-placeholder">
-                {{ getInitials(user.full_name) }}
-              </span>
               <span class="user-name">{{ user.full_name || user.login }}</span>
             </div>
           </router-link>
@@ -120,6 +116,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { avatarSrc } from '@/utils/avatar'
 
 const router = useRouter()
 const route = useRoute()
@@ -217,16 +214,6 @@ const logout = async () => {
     
     await router.push('/login?redirect=' + encodeURIComponent(route.fullPath))
   }
-}
-
-const getInitials = (name) => {
-  if (!name) return '?'
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
 }
 
 const getRoleText = (role) => {

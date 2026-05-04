@@ -94,6 +94,50 @@ class ProfileController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Загрузка аватара (изображение на диск public/avatars)
+     */
+    public function uploadAvatar(Request $request)
+    {
+        try {
+            $user = Auth::user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Пользователь не авторизован',
+                ], 401);
+            }
+
+            $request->validate([
+                'avatar' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            ]);
+
+            $ext = strtolower($request->file('avatar')->getClientOriginalExtension());
+            if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                $ext = 'jpg';
+            }
+
+            $basename = 'user_'.$user->id.'.'.$ext;
+            $request->file('avatar')->storeAs('avatars', $basename, 'public');
+            $url = asset('storage/avatars/'.$basename);
+            $user->forceFill(['avatar' => $url])->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Аватар обновлён',
+                'user' => $user,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Ошибка загрузки аватара: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Не удалось загрузить аватар: '.$e->getMessage(),
+            ], 500);
+        }
+    }
     
     /**
      * Пополнить баланс

@@ -117,22 +117,51 @@ class ChatController extends Controller
     }
 
     /**
-     * Отправка сообщения
+     * Отправка сообщения (текст и/или файл)
      */
     public function sendMessage(Request $request, Chat $chat)
     {
         $this->authorizeParticipant($request, $chat);
 
         $request->validate([
-            'text' => 'required|string',
+            'text' => 'nullable|string|max:5000',
+            'file' => 'nullable|file|max:10240|mimes:jpeg,jpg,png,gif,webp,pdf,zip,doc,docx,xls,xlsx,txt,csv',
         ]);
+
+        $hasFile = $request->hasFile('file');
+        $text = trim((string) $request->input('text', ''));
+
+        if (!$hasFile && $text === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Введите текст или прикрепите файл',
+            ], 422);
+        }
+
+        $attachmentPath = null;
+        $attachmentName = null;
+
+        if ($hasFile) {
+            $uploaded = $request->file('file');
+            $attachmentName = $uploaded->getClientOriginalName();
+            $attachmentPath = $uploaded->store('chat_attachments', 'public');
+        }
+
+        $displayText = $text;
+        if ($displayText === '' && $attachmentName) {
+            $displayText = '📎 '.$attachmentName;
+        }
 
         $message = Message::create([
             'chat_id' => $chat->id,
             'author_id' => $this->resolveUserId($request),
-            'text' => $request->text,
+            'text' => $displayText,
             'time' => now(),
+            'attachment_path' => $attachmentPath,
+            'attachment_name' => $attachmentName,
         ]);
+
+        $message->load('author');
 
         $chat->update([
             'token' => Str::uuid(),

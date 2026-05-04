@@ -78,7 +78,7 @@
             <div class="avatar-container">
               <div class="avatar-ring"></div>
               <div class="avatar">
-                {{ getInitials(freelancer.full_name || freelancer.name || freelancer.login) }}
+                <img :src="userAvatar(freelancer)" :alt="freelancer.full_name || freelancer.login || ''" />
               </div>
               <div class="rating-badge" v-if="freelancer.rating">
                 {{ freelancer.rating }} ★
@@ -129,6 +129,7 @@
 import _ from 'lodash';
 import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import { avatarSrc } from '@/utils/avatar';
 
 export default {
   name: 'FreelancersPage',
@@ -219,6 +220,9 @@ export default {
   },
   
   methods: {
+    userAvatar(user) {
+      return avatarSrc(user, this.apiBaseUrl);
+    },
     // Получение всех пользователей
     async fetchUsers() {
       this.loading = true;
@@ -539,6 +543,15 @@ export default {
   position: relative;
   z-index: 2;
   box-shadow: 0 10px 30px rgba(8, 51, 88, 0.4);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .rating-badge {

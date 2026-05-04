@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Chat extends Model
 {
@@ -36,5 +37,19 @@ class Chat extends Model
     public function messages()
     {
         return $this->hasMany(Message::class)->orderBy('created_at');
+    }
+
+    /**
+     * Удаляет историю сообщений проекта (при смене исполнителя).
+     */
+    public static function purgeMessagesForProject(int $projectId): void
+    {
+        $chat = static::where('project_id', $projectId)->first();
+        if (!$chat) {
+            return;
+        }
+
+        Message::where('chat_id', $chat->id)->delete();
+        $chat->forceFill(['token' => (string) Str::uuid()])->save();
     }
 }
