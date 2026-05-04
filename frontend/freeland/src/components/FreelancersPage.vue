@@ -106,15 +106,6 @@
                 На платформе с {{ new Date(freelancer.created_at).getFullYear() }}
               </span>
             </div>
-
-            <div class="card-footer">
-              <button class="contact-button" @click.stop="contactFreelancer(freelancer.id)">
-                Написать
-              </button>
-              <button class="profile-button" @click.stop="openFreelancerProfile(freelancer.id)">
-                Профиль
-              </button>
-            </div>
             
           </div>
         </div>

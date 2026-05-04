@@ -153,6 +153,40 @@
             </button>
           </div>
 
+          <div class="table-container ios-glass" style="margin-bottom: 20px;">
+            <h3 class="section-title" style="font-size: 1.2rem; margin-bottom: 12px;">Заявки на новые категории</h3>
+            <table class="admin-table" v-if="categoryRequests.length">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Название</th>
+                  <th>Описание</th>
+                  <th>От кого</th>
+                  <th>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="req in categoryRequests" :key="req.id">
+                  <td>{{ req.id }}</td>
+                  <td>{{ req.name }}</td>
+                  <td>{{ truncateText(req.description, 60) }}</td>
+                  <td>{{ (req.user && (req.user.full_name || req.user.login)) || '—' }}</td>
+                  <td class="actions">
+                    <button class="action-btn edit" @click="approveCategoryRequest(req)" title="Утвердить">
+                      <span class="action-icon">✅</span>
+                    </button>
+                    <button class="action-btn delete" @click="rejectCategoryRequest(req)" title="Отклонить">
+                      <span class="action-icon">⛔</span>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div v-else style="color:#F0F8FF; opacity: 0.8; padding: 8px 0;">
+              Нет новых заявок
+            </div>
+          </div>
+
           <div class="table-container ios-glass">
             <table class="admin-table">
               <thead>
@@ -481,6 +515,7 @@ export default {
       users: [],
       projects: [],
       categories: [],
+      categoryRequests: [],
       comments: [],
       payments: [],
 
@@ -568,6 +603,7 @@ export default {
           this.fetchUsers(),
           this.fetchProjects(),
           this.fetchCategories(),
+          this.fetchCategoryRequests(),
           this.fetchComments(),
           this.fetchPayments()
         ]);
@@ -596,6 +632,86 @@ export default {
       const response = await fetch(`${this.apiBaseUrl}/api/categories`);
       const data = await response.json();
       this.categories = data;
+    },
+
+    async fetchCategoryRequests() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        this.categoryRequests = [];
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/category-requests/pending`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          this.categoryRequests = [];
+          return;
+        }
+
+        const data = await response.json();
+        this.categoryRequests = Array.isArray(data?.items) ? data.items : [];
+      } catch (e) {
+        console.error('Ошибка загрузки заявок на категории:', e);
+        this.categoryRequests = [];
+      }
+    },
+
+    async approveCategoryRequest(req) {
+      const token = localStorage.getItem('token');
+      if (!token || !req?.id) return;
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/category-requests/${req.id}/approve`, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+          this.showNotification(data.message || 'Категория добавлена', 'success');
+          await Promise.all([this.fetchCategories(), this.fetchCategoryRequests()]);
+        } else {
+          this.showNotification(data.message || 'Ошибка при утверждении', 'error');
+        }
+      } catch (e) {
+        console.error('Ошибка approveCategoryRequest:', e);
+        this.showNotification('Ошибка при утверждении', 'error');
+      }
+    },
+
+    async rejectCategoryRequest(req) {
+      const token = localStorage.getItem('token');
+      if (!token || !req?.id) return;
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/category-requests/${req.id}/reject`, {
+          method: 'PATCH',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+          this.showNotification(data.message || 'Заявка отклонена', 'success');
+          await this.fetchCategoryRequests();
+        } else {
+          this.showNotification(data.message || 'Ошибка при отклонении', 'error');
+        }
+      } catch (e) {
+        console.error('Ошибка rejectCategoryRequest:', e);
+        this.showNotification('Ошибка при отклонении', 'error');
+      }
     },
     
     async fetchComments() {

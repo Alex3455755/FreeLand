@@ -34,6 +34,9 @@
             <span class="add-icon">+</span>
             Добавить проект
           </button>
+          <button @click="openCategoryRequestModal" class="add-project-button ios-glass secondary">
+            Предложить категорию
+          </button>
         </div>
         
         <!-- Фильтры и поиск -->
@@ -224,6 +227,56 @@
       </div>
     </div>
 
+    <!-- Модальное окно заявки на новую категорию -->
+    <div v-if="showCategoryRequestModal" class="modal-overlay" @click.self="closeCategoryRequestModal">
+      <div class="modal-container ios-glass">
+        <div class="modal-header">
+          <div>
+            <h2 class="modal-title">Заявка на новую категорию</h2>
+            <p class="modal-subtitle">Опишите категорию — администратор сможет её добавить</p>
+          </div>
+          <button @click="closeCategoryRequestModal" class="modal-close">×</button>
+        </div>
+
+        <form @submit.prevent="submitCategoryRequest" class="modal-form">
+          <div v-if="categoryRequestMessage" class="form-message" :class="categoryRequestMessageType">
+            {{ categoryRequestMessage }}
+          </div>
+
+          <div class="form-group">
+            <label>Название категории <span class="required">*</span></label>
+            <input
+              v-model="categoryRequestForm.name"
+              type="text"
+              class="form-input ios-glass"
+              required
+              placeholder="Например: Разработка Telegram-ботов"
+            >
+          </div>
+
+          <div class="form-group">
+            <label>Описание</label>
+            <textarea
+              v-model="categoryRequestForm.description"
+              class="form-input ios-glass"
+              rows="4"
+              placeholder="Коротко: что входит в эту категорию"
+            ></textarea>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" @click="closeCategoryRequestModal" class="modal-button cancel">
+              Отмена
+            </button>
+            <button type="submit" class="modal-button submit" :disabled="categoryRequestSubmitting">
+              <span v-if="categoryRequestSubmitting" class="button-spinner"></span>
+              {{ categoryRequestSubmitting ? 'Отправка...' : 'Отправить заявку' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <FooterApp />
   </div>
 </template>
@@ -260,6 +313,16 @@ export default {
       submitting: false,
       projectFormMessage: '',
       projectFormMessageType: 'info',
+      
+      // Модальное окно заявки на новую категорию
+      showCategoryRequestModal: false,
+      categoryRequestSubmitting: false,
+      categoryRequestMessage: '',
+      categoryRequestMessageType: 'info',
+      categoryRequestForm: {
+        name: '',
+        description: ''
+      },
       newProject: {
         title: '',
         description: '',
@@ -300,6 +363,14 @@ export default {
     showNotification(message, type = 'info') {
       this.projectFormMessage = String(message || '');
       this.projectFormMessageType = type;
+      if (type === 'error') {
+        console.error(message);
+      }
+    },
+
+    showCategoryRequestNotification(message, type = 'info') {
+      this.categoryRequestMessage = String(message || '');
+      this.categoryRequestMessageType = type;
       if (type === 'error') {
         console.error(message);
       }
@@ -499,6 +570,19 @@ export default {
       // Блокируем прокрутку страницы
       document.body.style.overflow = 'hidden';
     },
+
+    openCategoryRequestModal() {
+      if (!this.isCustomer) {
+        this.showNotification('Только заказчики могут отправлять заявки на категории', 'error');
+        return;
+      }
+
+      this.categoryRequestForm = { name: '', description: '' };
+      this.categoryRequestMessage = '';
+      this.categoryRequestMessageType = 'info';
+      this.showCategoryRequestModal = true;
+      document.body.style.overflow = 'hidden';
+    },
     
     // Закрытие модального окна
     closeAddProjectModal() {
@@ -507,6 +591,66 @@ export default {
       this.projectFormMessageType = 'info';
       // Возвращаем прокрутку
       document.body.style.overflow = '';
+    },
+
+    closeCategoryRequestModal() {
+      this.showCategoryRequestModal = false;
+      this.categoryRequestMessage = '';
+      this.categoryRequestMessageType = 'info';
+      document.body.style.overflow = '';
+    },
+
+    async submitCategoryRequest() {
+      const name = String(this.categoryRequestForm.name || '').trim();
+      const description = String(this.categoryRequestForm.description || '').trim();
+
+      if (!name) {
+        this.showCategoryRequestNotification('Введите название категории', 'error');
+        return;
+      }
+
+      if (name.length < 2) {
+        this.showCategoryRequestNotification('Название должно быть не короче 2 символов', 'error');
+        return;
+      }
+
+      this.categoryRequestSubmitting = true;
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        this.showCategoryRequestNotification('Необходима авторизация', 'error');
+        this.categoryRequestSubmitting = false;
+        return;
+      }
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/category-requests`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name,
+            description: description || null
+          })
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.success) {
+          this.showCategoryRequestNotification(data.message || 'Заявка отправлена', 'success');
+          this.fetchCategories();
+        } else {
+          this.showCategoryRequestNotification(data.message || 'Ошибка при отправке заявки', 'error');
+        }
+      } catch (error) {
+        console.error('Ошибка отправки заявки на категорию:', error);
+        this.showCategoryRequestNotification('Ошибка при отправке заявки', 'error');
+      } finally {
+        this.categoryRequestSubmitting = false;
+      }
     },
     
     // Отправка нового проекта
@@ -771,6 +915,10 @@ export default {
 
 .add-project-wrapper {
   margin-bottom: 30px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .add-project-button {
@@ -793,6 +941,16 @@ export default {
   border-color: rgba(168, 209, 255, 0.6);
   transform: translateY(-2px);
   box-shadow: 0 10px 30px rgba(168, 209, 255, 0.2);
+}
+
+.add-project-button.secondary {
+  background: rgba(168, 209, 255, 0.1);
+  border-color: rgba(168, 209, 255, 0.22);
+}
+
+.add-project-button.secondary:hover {
+  background: rgba(168, 209, 255, 0.16);
+  border-color: rgba(168, 209, 255, 0.4);
 }
 
 .add-icon {

@@ -15,6 +15,7 @@ use App\Http\COntrollers\ProfileController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\CategoryRequestController;
 
 
 
@@ -119,6 +120,11 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::delete('/admin/reviews/{id}', [ReviewController::class, 'destroy']);
     Route::patch('/admin/reviews/{id}/approve', [ReviewController::class, 'approve']);
     Route::patch('/admin/reviews/{id}/reject', [ReviewController::class, 'reject']);
+
+    // заявки на новые категории
+    Route::get('/admin/category-requests/pending', [CategoryRequestController::class, 'pending']);
+    Route::patch('/admin/category-requests/{categoryRequest}/approve', [CategoryRequestController::class, 'approve']);
+    Route::patch('/admin/category-requests/{categoryRequest}/reject', [CategoryRequestController::class, 'reject']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -156,4 +162,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/applications/{application}/reject', [ApplicationController::class, 'reject']);
 
     Route::post('/projects/{project}/pay', [ProjectController::class, 'pay']);
+
+    // заявка на добавление новой категории (от пользователя)
+    Route::post('/category-requests', [CategoryRequestController::class, 'store']);
 });
