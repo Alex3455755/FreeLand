@@ -54,19 +54,53 @@
                 class="message"
                 :class="{ mine: message.author_id === user.id }"
               >
-                {{ message.text }}
+                <div v-if="message.text" class="message-text">{{ message.text }}</div>
+                <a
+                  v-if="message.attachment_url && !messageIsImage(message)"
+                  :href="message.attachment_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="message-file-link"
+                >
+                  📎 {{ message.attachment_name || 'Скачать файл' }}
+                </a>
+                <a
+                  v-if="message.attachment_url && messageIsImage(message)"
+                  :href="message.attachment_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="message-image-wrap"
+                >
+                  <img :src="message.attachment_url" class="message-image" alt="" />
+                </a>
               </div>
             </div>
 
+            <div v-if="pendingAttachmentName" class="attachment-pill">
+              <span>{{ pendingAttachmentName }}</span>
+              <button type="button" class="attachment-remove" @click="clearAttachment">×</button>
+            </div>
+
             <div class="send-row">
+              <input
+                ref="chatFileInput"
+                type="file"
+                class="chat-file-input"
+                @change="onChatFile"
+              />
+              <button type="button" class="attach-btn" @click="$refs.chatFileInput.click()">Файл</button>
               <textarea
                 v-model="newMessage"
                 class="chat-input"
                 rows="2"
-                placeholder="Введите сообщение..."
+                placeholder="Текст сообщения (необязательно, если есть файл)..."
                 @keydown.enter.prevent="sendMessage"
               />
-              <button class="send-btn" :disabled="sending || !newMessage.trim()" @click="sendMessage">
+              <button
+                class="send-btn"
+                :disabled="sending || (!newMessage.trim() && !pendingFile)"
+                @click="sendMessage"
+              >
                 {{ sending ? 'Отправка...' : 'Отправить' }}
               </button>
             </div>
@@ -102,7 +136,9 @@ export default {
       messagesLoading: false,
       newMessage: '',
       sending: false,
-      chatPollingInterval: null
+      chatPollingInterval: null,
+      pendingFile: null,
+      pendingAttachmentName: ''
     }
   },
   created() {
@@ -305,22 +341,53 @@ export default {
       }
       await this.fetchChat(this.activeChat.id, false)
     },
+    messageIsImage(message) {
+      const n = (message.attachment_name || message.attachment_url || '').toLowerCase()
+      return /\.(jpe?g|png|gif|webp)$/.test(n)
+    },
+    onChatFile(e) {
+      const f = e.target.files && e.target.files[0]
+      this.pendingFile = f || null
+      this.pendingAttachmentName = f ? f.name : ''
+    },
+    clearAttachment() {
+      this.pendingFile = null
+      this.pendingAttachmentName = ''
+      if (this.$refs.chatFileInput) this.$refs.chatFileInput.value = ''
+    },
     async sendMessage() {
-      if (!this.newMessage.trim() || !this.activeChat?.id) return
+      const text = this.newMessage.trim()
+      const file = this.pendingFile
+      if (!this.activeChat?.id || (!text && !file)) return
       const token = localStorage.getItem('token')
       if (!token) return
 
       this.sending = true
       try {
-        const response = await fetch(`${this.apiBaseUrl}/api/chats/${this.activeChat.id}/message`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ text: this.newMessage.trim() })
-        })
+        let response
+        if (file) {
+          const fd = new FormData()
+          if (text) fd.append('text', text)
+          fd.append('file', file)
+          response = await fetch(`${this.apiBaseUrl}/api/chats/${this.activeChat.id}/message`, {
+            method: 'POST',
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: fd
+          })
+        } else {
+          response = await fetch(`${this.apiBaseUrl}/api/chats/${this.activeChat.id}/message`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ text })
+          })
+        }
 
         const data = await response.json()
         if (!response.ok || !data.success) {
@@ -328,6 +395,7 @@ export default {
         }
 
         this.newMessage = ''
+        this.clearAttachment()
         await this.fetchChat(this.activeChat.id, true)
       } catch (error) {
         console.error('MyChats - Ошибка отправки:', error)
@@ -360,8 +428,17 @@ export default {
 .messages { min-height: 420px; height: auto; max-height: none; flex: 1; overflow-y: auto; padding-right: 8px; }
 .message { display: inline-block; max-width: 80%; margin: 6px 0; padding: 10px 12px; border-radius: 14px; background: rgba(10,77,140,0.3); color: #fff; }
 .message.mine { background: rgba(52,152,219,0.45); margin-left: auto; display: block; }
-.send-row { display: flex; gap: 10px; margin-top: 14px; align-items: flex-end; }
-.chat-input { flex: 1; border-radius: 16px; border: 1px solid rgba(168,209,255,0.3); background: rgba(10,77,140,0.2); color: #fff; padding: 12px 14px; resize: none; min-height: 50px; }
+.message-text { white-space: pre-wrap; word-break: break-word; }
+.message-file-link { display: inline-block; margin-top: 6px; color: #a8d1ff; text-decoration: underline; font-size: 0.95rem; }
+.message-image-wrap { display: block; margin-top: 8px; max-width: 260px; }
+.message-image { width: 100%; border-radius: 10px; display: block; border: 1px solid rgba(168,209,255,0.25); }
+.attachment-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 9999px; background: rgba(10,77,140,0.35); color: #fff; font-size: 0.9rem; }
+.attachment-remove { border: none; background: transparent; color: #f0f8ff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 4px; }
+.send-row { display: flex; gap: 10px; margin-top: 14px; align-items: flex-end; flex-wrap: wrap; }
+.chat-file-input { display: none; }
+.attach-btn { flex-shrink: 0; border: 1px solid rgba(168,209,255,0.35); background: rgba(10,77,140,0.35); color: #e8f4ff; border-radius: 9999px; padding: 12px 16px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.attach-btn:hover { background: rgba(10,77,140,0.5); }
+.chat-input { flex: 1; min-width: 160px; border-radius: 16px; border: 1px solid rgba(168,209,255,0.3); background: rgba(10,77,140,0.2); color: #fff; padding: 12px 14px; resize: none; min-height: 50px; }
 .send-btn { border: 1px solid rgba(168,209,255,0.4); background: rgba(10,77,140,0.6); color: #fff; border-radius: 9999px; padding: 12px 20px; cursor: pointer; font-weight: 600; }
 .send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 

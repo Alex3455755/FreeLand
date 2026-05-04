@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Профиль
     Route::get('/profil/{user}', [ProfileController::class, 'index']);
     Route::post('/profile/update', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/deposit', [ProfileController::class, 'deposit']);
     Route::post('/profile/withdraw', [ProfileController::class, 'withdraw']);
     Route::post('/profile/send-money/{user}', [ProfileController::class, 'sendMoney']);

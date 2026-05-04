@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Chat;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
@@ -176,11 +177,33 @@ class ProjectController extends Controller
      */
     public function update(Request $request)
     {
-         Project::find($request->id)->update($request->all());
+        $project = Project::find($request->id);
+        if (!$project) {
+            return response()->json([
+                'success' => false,
+                'message' => 'проект не найден',
+            ], 404);
+        }
+
+        $oldFreelancerId = (int) ($project->freelancer_id ?? 0);
+
+        $project->update($request->except(['id']));
+        $project->refresh();
+
+        $newFreelancerId = (int) ($project->freelancer_id ?? 0);
+
+        if ($oldFreelancerId !== $newFreelancerId) {
+            Chat::purgeMessagesForProject($project->id);
+            $chat = Chat::where('project_id', $project->id)->first();
+            if ($chat) {
+                $chat->interlocutor_id = $newFreelancerId ?: null;
+                $chat->save();
+            }
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'проект успешно обновлен'
+            'message' => 'проект успешно обновлен',
         ]);
     }
 

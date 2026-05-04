@@ -36,6 +36,29 @@ class CommentController extends Controller
      */
     public function store(Request $request)
     {
+        $author = User::find($request['author_id']);
+        $reviewed = User::find($request['user_id']);
+
+        if (!$author || !$reviewed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Пользователь не найден',
+            ], 422);
+        }
+
+        $authorRole = $this->normalizeRole($author->role);
+        $targetRole = $this->normalizeRole($reviewed->role);
+
+        $pairAllowed = ($authorRole === 'freelancer' && $targetRole === 'customer')
+            || ($authorRole === 'customer' && $targetRole === 'freelancer');
+
+        if (!$pairAllowed) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Фрилансеры могут оставлять отзывы только заказчикам, заказчики — только фрилансерам.',
+            ], 403);
+        }
+
         $com = new Comment([
             "text" => $request['text'],
             "rating" => $request['rating'],
@@ -49,8 +72,33 @@ class CommentController extends Controller
 
          return response()->json([
             'success' => true,
-            'message' => 'Отзыв успешно создан'
+            'message' => 'Отзыв успешно создан',
+            'comment_id' => $com->id,
         ]);
+    }
+
+    /**
+     * @return string|null 'freelancer'|'customer'|'admin'|null
+     */
+    private function normalizeRole($role): ?string
+    {
+        if ($role === null || $role === '') {
+            return null;
+        }
+
+        $r = mb_strtolower(trim((string) $role));
+
+        if (in_array($r, ['freelancer', 'фрилансер', '2'], true)) {
+            return 'freelancer';
+        }
+        if (in_array($r, ['customer', 'заказчик', '1'], true)) {
+            return 'customer';
+        }
+        if (in_array($r, ['admin', 'администратор', '3'], true)) {
+            return 'admin';
+        }
+
+        return null;
     }
 
     /**

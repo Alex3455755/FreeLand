@@ -77,61 +77,9 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_ACCEPTED,
         ]);
 
-        $mail = new PHPMailer(true);
-        $user = User::find($freelancerId);
+        $previousFreelancerId = (int) ($project->freelancer_id ?? 0);
+        $newFreelancerId = (int) $freelancerId;
 
-        try {
-            $mail->SMTPDebug = 2;
-
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'alexeigyll@gmail.com';
-            $mail->Password = 'wjdd rplm hkhi ijhp';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            $mail->Port = 465;
-
-            $mail->SMTPOptions = [
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true,
-                ],
-            ];
-
-            $mail->setFrom('alexeigyll@gmail.com', 'freeland');
-            $mail->addAddress($user->login);
-
-            $mail->isHTML(true);
-            $mail->Subject = 'Отклик по заявке';
-            $mail->Body = "Ваша заявка по проекту принята";
-
-            $mail->SMTPDebug = 2;
-            $mail->Timeout = 10;
-            $mail->Debugoutput = function($str, $level) {
-                error_log("SMTP: $str");
-            };
-
-            if (!$mail->send()) {
-                throw new \Exception($mail->ErrorInfo);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Письмо отправлено'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
-
-        // Временно отключено: отправка email уведомлений
-        // $this->sendApplicationStatusEmail($application, true);
-
-        // Синхронизируем проект с принятым исполнителем
         $projectUpdateData = [
             'status' => $project->status === 'open' ? 'in_progress' : $project->status,
         ];
@@ -143,8 +91,12 @@ class ApplicationController extends Controller
         }
 
         $project->update($projectUpdateData);
+        $project->refresh();
 
-        // Создаём или исправляем чат проекта, чтобы он был виден обеим сторонам
+        if ($previousFreelancerId !== $newFreelancerId) {
+            Chat::purgeMessagesForProject($application->project_id);
+        }
+
         $chat = Chat::firstOrNew([
             'project_id' => $application->project_id,
         ]);
@@ -155,9 +107,53 @@ class ApplicationController extends Controller
         }
         $chat->save();
 
+        $user = User::find($freelancerId);
+        $emailError = null;
+        if ($user?->login) {
+            $mail = new PHPMailer(true);
+            try {
+                $mail->SMTPDebug = 0;
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'alexeigyll@gmail.com';
+                $mail->Password = 'wjdd rplm hkhi ijhp';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port = 465;
+
+                $mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                    ],
+                ];
+
+                $mail->setFrom('alexeigyll@gmail.com', 'freeland');
+                $mail->addAddress($user->login);
+
+                $mail->isHTML(true);
+                $mail->Subject = 'Отклик по заявке';
+                $mail->Body = 'Ваша заявка по проекту принята';
+
+                $mail->Timeout = 10;
+                $mail->Debugoutput = function ($str, $level) {
+                    error_log("SMTP: $str");
+                };
+
+                if (!$mail->send()) {
+                    $emailError = $mail->ErrorInfo;
+                }
+            } catch (\Exception $e) {
+                $emailError = $e->getMessage();
+            }
+        }
+
         return response()->json([
-            'application' => $application,
+            'success' => true,
+            'application' => $application->fresh(['user', 'project']),
             'chat' => $chat,
+            'email_error' => $emailError,
         ]);
     }
 
@@ -172,62 +168,50 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_REJECTED,
         ]);
 
-        // Временно отключено: отправка email уведомлений
-        // $this->sendApplicationStatusEmail($application, false);
         $freelancerId = $application->user_id;
-        $mail = new PHPMailer(true);
         $user = User::find($freelancerId);
-        
+        if ($user?->login) {
+            $mail = new PHPMailer(true);
+            try {
+                $mail->SMTPDebug = 0;
+                $mail->isSMTP();
+                $mail->Host = 'smtp.gmail.com';
+                $mail->SMTPAuth = true;
+                $mail->Username = 'alexeigyll@gmail.com';
+                $mail->Password = 'wjdd rplm hkhi ijhp';
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+                $mail->Port = 465;
 
-        try {
-            $mail->SMTPDebug = 2;
+                $mail->SMTPOptions = [
+                    'ssl' => [
+                        'verify_peer' => false,
+                        'verify_peer_name' => false,
+                        'allow_self_signed' => true,
+                    ],
+                ];
 
-            $mail->isSMTP();
-            $mail->Host = 'smtp.gmail.com';
-            $mail->SMTPAuth = true;
-            $mail->Username = 'alexeigyll@gmail.com';
-            $mail->Password = 'wjdd rplm hkhi ijhp';
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            $mail->Port = 465;
+                $mail->setFrom('alexeigyll@gmail.com', 'freeland');
+                $mail->addAddress($user->login);
 
-            $mail->SMTPOptions = [
-                'ssl' => [
-                    'verify_peer' => false,
-                    'verify_peer_name' => false,
-                    'allow_self_signed' => true,
-                ],
-            ];
+                $mail->isHTML(true);
+                $mail->Subject = 'Отклик по заявке';
+                $mail->Body = 'Ваша заявка по проекту отклонена';
 
-            $mail->setFrom('alexeigyll@gmail.com', 'freeland');
-            $mail->addAddress($user->login);
+                $mail->Timeout = 10;
+                $mail->Debugoutput = function ($str, $level) {
+                    error_log("SMTP: $str");
+                };
 
-            $mail->isHTML(true);
-            $mail->Subject = 'Отклик по заявке';
-            $mail->Body = "Ваша заявка по проекту отклоненна";
-
-            $mail->SMTPDebug = 2;
-            $mail->Timeout = 10;
-            $mail->Debugoutput = function($str, $level) {
-                error_log("SMTP: $str");
-            };
-
-            if (!$mail->send()) {
-                throw new \Exception($mail->ErrorInfo);
+                $mail->send();
+            } catch (\Exception $e) {
+                // уведомление по почте не блокирует отклонение заявки
             }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Письмо отправлено'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
         }
 
-        return response()->json($application);
+        return response()->json([
+            'success' => true,
+            'application' => $application->fresh(['user', 'project']),
+        ]);
     }
 
     /**

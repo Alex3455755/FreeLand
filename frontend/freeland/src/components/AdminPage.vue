@@ -47,8 +47,7 @@
         <div v-if="activeTab === 'users'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Управление пользователями</h2>
-            <button class="add-button ios-glass" @click="openUserModal()">
-              <span class="button-icon">➕</span>
+            <button type="button" class="add-button ios-glass" @click="openUserModal()">
               Добавить пользователя
             </button>
           </div>
@@ -77,12 +76,8 @@
                   <td>{{ user.balance || '—' }}</td>
                   <td>{{ user.rating || '—' }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="openUserModal(user)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('users', user.id, user.full_name || user.login)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="openUserModal(user)">Изменить</button>
+                    <button type="button" class="action-btn delete" @click="confirmDelete('users', user.id, user.full_name || user.login)">Удалить</button>
                   </td>
                 </tr>
               </tbody>
@@ -94,8 +89,7 @@
         <div v-if="activeTab === 'projects'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Управление проектами</h2>
-            <button class="add-button ios-glass" @click="openProjectModal()">
-              <span class="button-icon">➕</span>
+            <button type="button" class="add-button ios-glass" @click="openProjectModal()">
               Добавить проект
             </button>
           </div>
@@ -130,12 +124,8 @@
                   <td>{{ getCategoryName(project.category_id) }}</td>
                   <td>{{ formatDate(project.deadline) }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="openProjectModal(project)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('projects', project.id, project.title)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="openProjectModal(project)">Изменить</button>
+                    <button type="button" class="action-btn delete" @click="confirmDelete('projects', project.id, project.title)">Удалить</button>
                   </td>
                 </tr>
               </tbody>
@@ -147,8 +137,7 @@
         <div v-if="activeTab === 'categories'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Управление категориями</h2>
-            <button class="add-button ios-glass" @click="openCategoryModal()">
-              <span class="button-icon">➕</span>
+            <button type="button" class="add-button ios-glass" @click="openCategoryModal()">
               Добавить категорию
             </button>
           </div>
@@ -172,12 +161,8 @@
                   <td>{{ truncateText(req.description, 60) }}</td>
                   <td>{{ (req.user && (req.user.full_name || req.user.login)) || '—' }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="approveCategoryRequest(req)" title="Утвердить">
-                      <span class="action-icon">✅</span>
-                    </button>
-                    <button class="action-btn delete" @click="rejectCategoryRequest(req)" title="Отклонить">
-                      <span class="action-icon">⛔</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="approveCategoryRequest(req)">Утвердить</button>
+                    <button type="button" class="action-btn delete" @click="rejectCategoryRequest(req)">Отклонить</button>
                   </td>
                 </tr>
               </tbody>
@@ -201,12 +186,8 @@
                   <td>{{ category.id }}</td>
                   <td>{{ category.name }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="openCategoryModal(category)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('categories', category.id, category.name)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="openCategoryModal(category)">Изменить</button>
+                    <button type="button" class="action-btn delete" @click="confirmDelete('categories', category.id, category.name)">Удалить</button>
                   </td>
                 </tr>
               </tbody>
@@ -240,12 +221,8 @@
                   <td>{{ comment.rating }}</td>
                   <td>{{ truncateText(comment.text, 50) }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="openCommentModal(comment)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('comments', comment.id, `Комментарий #${comment.id}`)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="openCommentModal(comment)">Изменить</button>
+                    <button type="button" class="action-btn delete" @click="confirmDelete('comments', comment.id, `Комментарий #${comment.id}`)">Удалить</button>
                   </td>
                 </tr>
               </tbody>
@@ -287,12 +264,8 @@
                   </td>
                   <td>{{ payment.type }}</td>
                   <td class="actions">
-                    <button class="action-btn edit" @click="openPaymentModal(payment)">
-                      <span class="action-icon">✏️</span>
-                    </button>
-                    <button class="action-btn delete" @click="confirmDelete('payments', payment.id, `Платеж #${payment.id}`)">
-                      <span class="action-icon">🗑️</span>
-                    </button>
+                    <button type="button" class="action-btn edit" @click="openPaymentModal(payment)">Изменить</button>
+                    <button type="button" class="action-btn delete" @click="confirmDelete('payments', payment.id, `Платеж #${payment.id}`)">Удалить</button>
                   </td>
                 </tr>
               </tbody>
@@ -1701,20 +1674,26 @@ export default {
 /* Действия */
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .action-btn {
-  width: 32px;
-  height: 32px;
+  min-height: 32px;
+  padding: 6px 14px;
   border-radius: 8px;
   border: 1px solid rgba(168, 209, 255, 0.2);
   background: rgba(10, 77, 140, 0.2);
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #e8f4ff;
+  white-space: nowrap;
 }
 
 .action-btn:hover {
@@ -1729,10 +1708,6 @@ export default {
 .action-btn.delete:hover {
   background: rgba(231, 76, 60, 0.3);
   border-color: rgba(231, 76, 60, 0.4);
-}
-
-.action-icon {
-  font-size: 1rem;
 }
 
 /* Модальное окно */

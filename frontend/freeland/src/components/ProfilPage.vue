@@ -31,8 +31,7 @@
         <div class="profile-header ios-glass">
           <div class="profile-avatar-section">
             <div class="profile-avatar-large">
-              <img v-if="user.avatar" :src="user.avatar" :alt="user.full_name" />
-              <span v-else class="avatar-placeholder">{{ getInitials(user.full_name) }}</span>
+              <img :src="userAvatar(user)" :alt="user.full_name || ''" />
             </div>
             <div class="profile-info">
               <h1 class="profile-name">{{ user.full_name || user.login }}</h1>
@@ -161,15 +160,25 @@
               />
             </div>
             
-            <!-- <div class="form-group">
-              <label>Аватар (URL)</label>
-              <input 
-                v-model="editForm.avatar" 
-                type="text" 
-                class="form-input ios-glass"
-                placeholder="https://example.com/avatar.jpg"
+            <div class="form-group">
+              <label>Фото профиля</label>
+              <input
+                ref="avatarInput"
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                class="form-input ios-glass file-input"
+                @change="onAvatarFile"
               />
-            </div> -->
+              <p class="form-hint">JPG, PNG, GIF или WebP, до 5 МБ. Если не загружать — показывается автоматический аватар.</p>
+              <button
+                type="button"
+                class="submit-button secondary-btn"
+                :disabled="avatarUploading || !avatarFile"
+                @click="uploadAvatar"
+              >
+                {{ avatarUploading ? 'Загрузка...' : 'Загрузить фото' }}
+              </button>
+            </div>
             
             <div class="form-group">
               <label>Новый пароль (оставьте пустым, если не хотите менять)</label>
@@ -368,6 +377,7 @@
 <script>
 import FooterApp from '@/elements/FooterApp.vue'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
+import { avatarSrc } from '@/utils/avatar'
 
 export default {
   name: 'ProfilePage',
@@ -408,7 +418,9 @@ export default {
       transactionAmount: null,
       transactionProcessing: false,
       
-      apiBaseUrl: ''
+      apiBaseUrl: '',
+      avatarFile: null,
+      avatarUploading: false
     }
   },
   
@@ -431,6 +443,54 @@ export default {
   },
   
   methods: {
+    userAvatar(u) {
+      return avatarSrc(u, this.apiBaseUrl)
+    },
+    onAvatarFile(e) {
+      const f = e.target.files && e.target.files[0]
+      this.avatarFile = f || null
+    },
+    async uploadAvatar() {
+      if (!this.avatarFile) {
+        this.updateMessage = 'Выберите файл изображения'
+        this.updateMessageType = 'error'
+        return
+      }
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      this.avatarUploading = true
+      this.updateMessage = ''
+      try {
+        const fd = new FormData()
+        fd.append('avatar', this.avatarFile)
+        const response = await fetch(`${this.apiBaseUrl}/api/profile/avatar`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: fd
+        })
+        const data = await response.json()
+        if (response.ok && data.success) {
+          this.user = data.user
+          this.editForm.avatar = this.user.avatar || ''
+          this.updateMessage = data.message || 'Аватар обновлён'
+          this.updateMessageType = 'success'
+          this.avatarFile = null
+          if (this.$refs.avatarInput) this.$refs.avatarInput.value = ''
+        } else {
+          throw new Error(data.message || 'Ошибка загрузки')
+        }
+      } catch (error) {
+        console.error(error)
+        this.updateMessage = error.message || 'Не удалось загрузить аватар'
+        this.updateMessageType = 'error'
+      } finally {
+        this.avatarUploading = false
+      }
+    },
     async fetchProfile() {
       const token = localStorage.getItem('token')
       
@@ -1075,6 +1135,19 @@ export default {
   background: rgba(10, 77, 140, 0.3);
 }
 
+.file-input {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.form-hint {
+  margin: 8px 0 12px;
+  font-size: 0.88rem;
+  color: #A8D1FF;
+  opacity: 0.9;
+  line-height: 1.4;
+}
+
 .form-actions {
   display: flex;
   justify-content: center;
@@ -1107,6 +1180,20 @@ export default {
 .submit-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.submit-button.secondary-btn {
+  margin-top: 8px;
+  min-width: 0;
+  width: 100%;
+  max-width: 320px;
+  background: rgba(10, 77, 140, 0.5);
+  border: 1px solid rgba(168, 209, 255, 0.35);
+}
+
+.submit-button.secondary-btn:hover:not(:disabled) {
+  background: rgba(10, 77, 140, 0.65);
+  box-shadow: none;
 }
 
 .form-message {

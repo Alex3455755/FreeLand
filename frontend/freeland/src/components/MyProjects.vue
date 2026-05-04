@@ -75,7 +75,7 @@
                 >
                   <div class="application-main">
                     <div class="partner-avatar">
-                      {{ getInitials(application.user?.full_name || application.user?.login) }}
+                      <img :src="userAvatar(application.user)" alt="" />
                     </div>
                     <div class="application-user">
                       <div class="application-user-name">
@@ -127,7 +127,7 @@
                     <span class="partner-label">Исполнитель:</span>
                     <div v-if="project.freelancer" class="partner-details">
                       <div class="partner-avatar">
-                        {{ getInitials(project.freelancer.full_name || project.freelancer.login) }}
+                        <img :src="userAvatar(project.freelancer)" alt="" />
                       </div>
                       <span class="partner-name">{{ project.freelancer.full_name || project.freelancer.login }}</span>
                     </div>
@@ -138,7 +138,7 @@
                     <span class="partner-label">Заказчик:</span>
                     <div v-if="project.customer" class="partner-details">
                       <div class="partner-avatar">
-                        {{ getInitials(project.customer.full_name || project.customer.login) }}
+                        <img :src="userAvatar(project.customer)" alt="" />
                       </div>
                       <span class="partner-name">{{ project.customer.full_name || project.customer.login }}</span>
                     </div>
@@ -297,6 +297,7 @@
 <script>
 import FooterApp from '@/elements/FooterApp.vue'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
+import { avatarSrc } from '@/utils/avatar'
 
 export default {
   name: 'MyProjects',
@@ -828,6 +829,9 @@ export default {
     },
     
     // Инициалы
+    userAvatar(user) {
+      return avatarSrc(user, this.apiBaseUrl)
+    },
     getInitials(name) {
       if (!name) return '?'
       return name
@@ -1135,6 +1139,16 @@ export default {
   font-size: 0.9rem;
   color: #FFFFFF;
   border: 2px solid rgba(168, 209, 255, 0.3);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.partner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .partner-avatar.large {

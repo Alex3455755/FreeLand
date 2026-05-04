@@ -474,6 +474,15 @@ body {
   font-size: 50px;
   z-index: 2;
   box-shadow: 0 10px 30px rgba(8, 51, 88, 0.4);
+  overflow: hidden;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .freelancer-card h4 {

@@ -5,7 +5,7 @@
       <h2 class="form-title">Регистрация</h2>
       <p class="form-subtitle">Создайте аккаунт на FreeLand</p>
 
-      <form @submit.prevent="handleRegister" class="form-grid">
+      <form v-show="!verificationRequired" @submit.prevent="handleRegister" class="form-grid">
 
         <div class="form-group">
           <label>ФИО</label>
@@ -53,8 +53,18 @@
 
       <div v-if="verificationRequired" class="verification-box">
         <h3>Подтверждение email</h3>
-        <p>Введите код, отправленный на {{ verificationLogin }}</p>
-        <input v-model="verificationCode" type="text" maxlength="6" placeholder="6-значный код" />
+        <p class="verification-email">Код отправлен на <strong>{{ verificationLogin }}</strong></p>
+        <label class="verification-label" for="reg-verify-code">Код из письма</label>
+        <input
+          id="reg-verify-code"
+          v-model="verificationCode"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="8"
+          placeholder="000000"
+          class="verification-code-input"
+        />
         <div class="verification-actions">
           <button class="submit-button" :disabled="submitting" @click="verifyCode">
             {{ submitting ? 'Проверка...' : 'Подтвердить email' }}
@@ -155,10 +165,13 @@ const handleRegister = async () => {
 
     if (response.ok) {
       if (data.success === true || data.message === 'Пользователь успешно создан' || data.user) {
-        verificationRequired.value = Boolean(data.requires_verification)
+        verificationRequired.value = data.requires_verification === true
         verificationLogin.value = data.login || form.login
         message.value = data.message || 'Регистрация успешна!'
         messageType.value = 'success'
+        if (verificationRequired.value) {
+          verificationCode.value = ''
+        }
         if (!verificationRequired.value) {
           form.full_name = ''
           form.phone = ''
@@ -192,7 +205,8 @@ const handleRegister = async () => {
 }
 
 const verifyCode = async () => {
-  if (verificationCode.value.trim().length !== 6) {
+  const digits = verificationCode.value.replace(/\D/g, '')
+  if (digits.length !== 6) {
     message.value = 'Введите 6-значный код'
     messageType.value = 'error'
     return
@@ -209,7 +223,7 @@ const verifyCode = async () => {
       },
       body: JSON.stringify({
         login: verificationLogin.value,
-        code: verificationCode.value.trim()
+        code: digits
       })
     })
     const data = await response.json()
@@ -466,13 +480,28 @@ const resendCode = async () => {
   margin-bottom: 10px;
 }
 
-.verification-box input {
+.verification-email {
+  font-size: 0.95rem;
+}
+
+.verification-label {
+  display: block;
+  color: #d9ecff;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+.verification-code-input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-radius: 12px;
   border: 1px solid rgba(168, 209, 255, 0.3);
   background: rgba(10, 77, 140, 0.2);
   color: #fff;
+  font-size: 1.25rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .verification-actions {
