@@ -10,12 +10,13 @@ class Payment extends Model
     use HasFactory;
 
     protected $fillable = [
+        'customer_id',
+        'freelancer_id',
+        'project_id',
         'amount',
         'commission',
         'status',
         'type',
-        'project_id',
-        'freelancer_id',
     ];
 
     protected $casts = [

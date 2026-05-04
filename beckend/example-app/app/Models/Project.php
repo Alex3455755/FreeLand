@@ -4,10 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Project extends Model
 {
     use HasFactory;
+
+    protected $appends = [
+        'freelancer_id',
+    ];
 
     protected $fillable = [
         'title',
@@ -17,6 +22,7 @@ class Project extends Model
         'status',
         'category_id',
         'freelancer_id',
+        'frelancer_id',
         'customer_id',
     ];
 
@@ -35,13 +41,25 @@ class Project extends Model
     {
         return $this->belongsTo(User::class, 'customer_id');
     }
-        public function frelancer()
+    public function frelancer()
     {
-        return $this->belongsTo(User::class, 'freelancer_id');
+        $foreignKey = Schema::hasColumn('projects', 'freelancer_id') ? 'freelancer_id' : 'frelancer_id';
+        return $this->belongsTo(User::class, $foreignKey);
     }
+
     public function freelancer()
     {
-        return $this->belongsTo(User::class, 'freelancer_id');
+        $foreignKey = Schema::hasColumn('projects', 'freelancer_id') ? 'freelancer_id' : 'frelancer_id';
+        return $this->belongsTo(User::class, $foreignKey);
+    }
+
+    public function getFreelancerIdAttribute($value)
+    {
+        if (!is_null($value)) {
+            return $value;
+        }
+
+        return $this->attributes['frelancer_id'] ?? null;
     }
 
     public function comments()

@@ -154,4 +154,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/applications/{application}/accept', [ApplicationController::class, 'accept']);
 
     Route::patch('/applications/{application}/reject', [ApplicationController::class, 'reject']);
+
+    Route::post('/projects/{project}/pay', [ProjectController::class, 'pay']);
 });

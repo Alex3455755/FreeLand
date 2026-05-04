@@ -18,13 +18,13 @@ class LoginController extends Controller
             ], 401);
         }
 
-        if (!$user->email_verified_at) {
-            return response()->json([
-                'success' => false,
-                'requires_verification' => true,
-                'message' => 'Подтвердите email перед входом',
-            ], 403);
-        }
+        // if (!$user->email_verified_at) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'requires_verification' => true,
+        //         'message' => 'Подтвердите email перед входом',
+        //     ], 403);
+        // }
         
         // Создаем токен
         $token = $user->createToken('auth-token')->plainTextToken;

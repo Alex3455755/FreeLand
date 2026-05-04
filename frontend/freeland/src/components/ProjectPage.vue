@@ -136,11 +136,18 @@
     <div v-if="showAddProjectModal" class="modal-overlay" @click.self="closeAddProjectModal">
       <div class="modal-container ios-glass">
         <div class="modal-header">
-          <h2 class="modal-title">Создание нового проекта</h2>
+          <div>
+            <h2 class="modal-title">Создание нового проекта</h2>
+            <p class="modal-subtitle">Заполните форму и опубликуйте задачу</p>
+          </div>
           <button @click="closeAddProjectModal" class="modal-close">×</button>
         </div>
         
         <form @submit.prevent="submitNewProject" class="modal-form">
+          <div v-if="projectFormMessage" class="form-message" :class="projectFormMessageType">
+            {{ projectFormMessage }}
+          </div>
+
           <div class="form-group">
             <label>Название проекта <span class="required">*</span></label>
             <input 
@@ -251,6 +258,8 @@ export default {
       // Модальное окно добавления проекта
       showAddProjectModal: false,
       submitting: false,
+      projectFormMessage: '',
+      projectFormMessageType: 'info',
       newProject: {
         title: '',
         description: '',
@@ -266,8 +275,9 @@ export default {
   computed: {
     // Проверка, авторизован ли пользователь и является ли заказчиком
     isCustomer() {
-      return this.user && this.user.role === 'customer';
+      return this.user && (this.user.role === 'customer' || this.user.role === 'заказчик');
     },
+
     
     // Сегодняшняя дата для min атрибута в input date
     today() {
@@ -287,6 +297,14 @@ export default {
   },
   
   methods: {
+    showNotification(message, type = 'info') {
+      this.projectFormMessage = String(message || '');
+      this.projectFormMessageType = type;
+      if (type === 'error') {
+        console.error(message);
+      }
+    },
+
     // Получение текущего пользователя
     async fetchCurrentUser() {
       this.userLoading = true;
@@ -335,8 +353,10 @@ export default {
         
         const data = await response.json();
         
-        // Фильтрация на клиенте
-        let filteredProjects = data;
+        // Фильтрация на клиенте: скрываем проекты в работе/завершенные
+        let filteredProjects = (Array.isArray(data) ? data : []).filter(
+          project => !['in_progress', 'completed'].includes(project?.status)
+        );
         
         if (this.searchQuery) {
           const query = this.searchQuery.toLowerCase();
@@ -472,6 +492,8 @@ export default {
         category_id: '',
         customer_id: this.user ? this.user.id : null
       };
+      this.projectFormMessage = '';
+      this.projectFormMessageType = 'info';
       
       this.showAddProjectModal = true;
       // Блокируем прокрутку страницы
@@ -481,6 +503,8 @@ export default {
     // Закрытие модального окна
     closeAddProjectModal() {
       this.showAddProjectModal = false;
+      this.projectFormMessage = '';
+      this.projectFormMessageType = 'info';
       // Возвращаем прокрутку
       document.body.style.overflow = '';
     },
@@ -1128,12 +1152,16 @@ export default {
 }
 
 .modal-container {
-  max-width: 600px;
+  max-width: 560px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 30px;
-  border: 1px solid rgba(168, 209, 255, 0.2);
+  padding: 44px 34px;
+  border: 1px solid rgba(168, 209, 255, 0.24);
+  border-radius: 32px;
+  background: rgba(10, 77, 140, 0.15);
+  backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
   animation: modalFadeIn 0.3s ease;
 }
 
@@ -1156,9 +1184,17 @@ export default {
 }
 
 .modal-title {
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+}
+
+.modal-subtitle {
+  margin-top: 6px;
+  color: #d9ecff;
+  opacity: 0.85;
+  font-size: 0.95rem;
 }
 
 .modal-close {
@@ -1179,7 +1215,47 @@ export default {
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+}
+
+.modal-form .modal-button.submit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 220%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(168, 209, 255, 0.35), transparent);
+  transition: 0.8s;
+}
+
+.modal-form .modal-button.submit:hover::before {
+  left: 100%;
+}
+
+.form-message {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.form-message.success {
+  background: rgba(39, 174, 96, 0.2);
+  border: 1px solid rgba(39, 174, 96, 0.4);
+  color: #2ecc71;
+}
+
+.form-message.error {
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #ff9a8f;
+}
+
+.form-message.info {
+  background: rgba(52, 152, 219, 0.2);
+  border: 1px solid rgba(52, 152, 219, 0.4);
+  color: #a8d1ff;
 }
 
 .form-group {
@@ -1190,8 +1266,9 @@ export default {
 
 .form-group label {
   color: #F0F8FF;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
+  margin-left: 5px;
 }
 
 .required {
@@ -1206,10 +1283,10 @@ export default {
 }
 
 .form-input {
-  padding: 12px 16px;
+  padding: 15px 20px;
   background: rgba(10, 77, 140, 0.2);
   border: 1px solid rgba(168, 209, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 16px;
   color: #FFFFFF;
   font-size: 1rem;
   transition: all 0.3s ease;
@@ -1241,22 +1318,23 @@ select.form-input option {
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(168, 209, 255, 0.1);
 }
 
 .modal-button {
-  padding: 12px 30px;
+  width: 100%;
+  padding: 15px 18px;
   border-radius: 9999px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
+  border: 1px solid rgba(168, 209, 255, 0.3);
 }
 
 .modal-button.cancel {
@@ -1271,13 +1349,14 @@ select.form-input option {
 }
 
 .modal-button.submit {
-  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  background: rgba(10, 77, 140, 0.45);
   color: #FFFFFF;
-  border: 1px solid rgba(168, 209, 255, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-button.submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1A5D9C, #2A7BC3);
+  background: rgba(10, 77, 140, 0.62);
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(10, 77, 140, 0.4);
 }
@@ -1348,7 +1427,7 @@ select.form-input option {
   }
   
   .modal-actions {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
   
   .modal-button {

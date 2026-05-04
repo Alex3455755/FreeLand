@@ -53,9 +53,6 @@
               <button @click="showWithdrawModal = true" class="balance-button withdraw">
                 Вывести
               </button>
-              <button @click="openSendModal" class="balance-button send">
-                Отправить
-              </button>
             </div>
           </div>
         </div>
@@ -294,6 +291,16 @@
               required
             />
           </div>
+          <div v-if="transactionAmount > 0" class="commission-info">
+            <div class="info-row">
+              <span>Комиссия (5%):</span>
+              <span>{{ formatBalance(transactionAmount * 0.05) }}</span>
+            </div>
+            <div class="info-row total">
+              <span>Зачислится на баланс:</span>
+              <span>{{ formatBalance(transactionAmount * 0.95) }}</span>
+            </div>
+          </div>
           
           <div class="modal-actions">
             <button type="button" @click="closeModals" class="modal-button cancel">
@@ -325,77 +332,18 @@
               class="form-input ios-glass"
               placeholder="Введите сумму"
               min="1"
-              :max="user?.balance"
+              :max="Math.floor((user?.balance || 0) / 1.05)"
               required
             />
           </div>
-          <div class="form-hint">Доступно: {{ formatBalance(user?.balance || 0) }}</div>
-          
-          <div class="modal-actions">
-            <button type="button" @click="closeModals" class="modal-button cancel">
-              Отмена
-            </button>
-            <button type="submit" class="modal-button submit" :disabled="transactionProcessing">
-              <span v-if="transactionProcessing" class="button-spinner"></span>
-              {{ transactionProcessing ? 'Обработка...' : 'Вывести' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Модальное окно отправки с выпадающим списком -->
-    <div v-if="showSendModal" class="modal-overlay" @click.self="closeModals">
-      <div class="modal-container ios-glass">
-        <div class="modal-header">
-          <h2 class="modal-title">Отправка денег</h2>
-          <button @click="closeModals" class="modal-close">×</button>
-        </div>
-        
-        <form @submit.prevent="sendMoney" class="modal-form">
-          <div class="form-group">
-            <label>Получатель</label>
-            <div class="select-wrapper">
-              <select v-model="selectedReceiver" class="form-input ios-glass" required>
-                <option value="" disabled selected>Выберите получателя</option>
-                <option v-for="receiver in availableUsers" :key="receiver.id" :value="receiver">
-                  {{ receiver.full_name || receiver.login }} (ID: {{ receiver.id }}) - {{ getRoleText(receiver.role) }}
-                </option>
-              </select>
-              <span class="select-arrow">▼</span>
-            </div>
-            <div v-if="usersLoading" class="select-loading">
-              <span class="loader-sm"></span> Загрузка пользователей...
-            </div>
-          </div>
-          
-          <div class="form-group">
-            <label>Сумма перевода (₽)</label>
-            <input 
-              v-model.number="transactionAmount" 
-              type="number" 
-              class="form-input ios-glass"
-              placeholder="Введите сумму"
-              min="1"
-              required
-            />
-          </div>
-          
-          <div class="commission-info" v-if="selectedReceiver && transactionAmount > 0">
-            <div class="info-row">
-              <span>Получатель:</span>
-              <span class="receiver-name">{{ selectedReceiver.full_name || selectedReceiver.login }}</span>
-            </div>
-            <div class="info-row">
-              <span>Сумма перевода:</span>
-              <span>{{ formatBalance(transactionAmount) }}</span>
-            </div>
+          <div class="form-hint">Доступно на балансе: {{ formatBalance(user?.balance || 0) }}</div>
+          <div v-if="transactionAmount > 0" class="commission-info">
             <div class="info-row">
               <span>Комиссия (5%):</span>
               <span>{{ formatBalance(transactionAmount * 0.05) }}</span>
             </div>
             <div class="info-row total">
-              <span>Итого к списанию:</span>
+              <span>Итого спишется с баланса:</span>
               <span>{{ formatBalance(transactionAmount * 1.05) }}</span>
             </div>
           </div>
@@ -404,9 +352,9 @@
             <button type="button" @click="closeModals" class="modal-button cancel">
               Отмена
             </button>
-            <button type="submit" class="modal-button submit" :disabled="transactionProcessing || !selectedReceiver">
+            <button type="submit" class="modal-button submit" :disabled="transactionProcessing">
               <span v-if="transactionProcessing" class="button-spinner"></span>
-              {{ transactionProcessing ? 'Обработка...' : 'Отправить' }}
+              {{ transactionProcessing ? 'Обработка...' : 'Вывести' }}
             </button>
           </div>
         </form>
@@ -432,9 +380,6 @@ export default {
   data() {
     return {
       user: null,
-      users: [], // Список всех пользователей для выпадающего списка
-      availableUsers: [], // Отфильтрованный список (без текущего пользователя)
-      usersLoading: false,
       loading: true,
       updating: false,
       activeTab: 'info',
@@ -459,10 +404,8 @@ export default {
       // Модальные окна
       showDepositModal: false,
       showWithdrawModal: false,
-      showSendModal: false,
       
       transactionAmount: null,
-      selectedReceiver: null, // Выбранный получатель (объект пользователя)
       transactionProcessing: false,
       
       apiBaseUrl: ''
@@ -565,46 +508,6 @@ export default {
       } finally {
         this.applicationsLoading = false
       }
-    },
-    
-    // Загрузка списка пользователей для выпадающего списка
-    async fetchUsers() {
-      this.usersLoading = true
-      const token = localStorage.getItem('token')
-      
-      try {
-        const response = await fetch(`${this.apiBaseUrl}/api/users`, {
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        })
-        
-        const data = await response.json()
-        
-        if (response.ok) {
-          // Сохраняем всех пользователей
-          this.users = Array.isArray(data) ? data : (data.users || [])
-          
-          // Фильтруем, исключая текущего пользователя
-          this.availableUsers = this.users.filter(u => u.id !== this.user?.id)
-          
-          console.log('Загружены пользователи:', this.users)
-          console.log('Доступные получатели:', this.availableUsers)
-        }
-      } catch (error) {
-        console.error('Ошибка загрузки пользователей:', error)
-      } finally {
-        this.usersLoading = false
-      }
-    },
-    
-    // Открыть модальное окно отправки и загрузить пользователей
-    openSendModal() {
-      this.showSendModal = true
-      this.selectedReceiver = null
-      this.transactionAmount = null
-      this.fetchUsers() // Загружаем список пользователей
     },
     
     async updateProfile() {
@@ -758,75 +661,10 @@ export default {
       }
     },
     
-    async sendMoney() {
-      if (!this.selectedReceiver) {
-        alert('Выберите получателя')
-        return
-      }
-      
-      if (!Number.isFinite(this.transactionAmount) || this.transactionAmount < 1) {
-        alert('Введите корректную сумму')
-        return
-      }
-      
-      const total = this.transactionAmount * 1.05
-      if (total > this.user.balance) {
-        alert(`Недостаточно средств. Нужно: ${this.formatBalance(total)}`)
-        return
-      }
-      
-      this.transactionProcessing = true
-      const token = localStorage.getItem('token')
-      
-      // Отправляем данные с receiver_id (ID получателя)
-      const requestData = {
-        receiver_id: this.selectedReceiver.id, // Используем ID выбранного пользователя
-        amount: this.transactionAmount
-      }
-      
-      console.log('Отправка запроса:', requestData)
-      
-      try {
-        const response = await fetch(`${this.apiBaseUrl}/api/profile/send-money/${this.user.id}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(requestData)
-        })
-        
-        const data = await response.json()
-        console.log('Ответ сервера:', data)
-        
-        if (response.ok && data.success) {
-          this.user.balance = data.balance
-          
-          if (data.payment) {
-            this.sentPayments.unshift(data.payment)
-          }
-          
-          alert(data.message)
-          this.closeModals()
-          await this.fetchProfile()
-        } else {
-          throw new Error(data.message || 'Ошибка перевода')
-        }
-      } catch (error) {
-        console.error('Ошибка:', error)
-        alert('Ошибка: ' + error.message)
-      } finally {
-        this.transactionProcessing = false
-      }
-    },
-    
     closeModals() {
       this.showDepositModal = false
       this.showWithdrawModal = false
-      this.showSendModal = false
       this.transactionAmount = null
-      this.selectedReceiver = null
     },
     
     formatBalance(balance) {
@@ -1439,10 +1277,16 @@ export default {
 }
 
 .modal-container {
-  max-width: 500px;
+  max-width: 560px;
   width: 100%;
-  padding: 30px;
-  border: 1px solid rgba(168, 209, 255, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 40px 32px;
+  border: 1px solid rgba(168, 209, 255, 0.24);
+  border-radius: 32px;
+  background: rgba(10, 77, 140, 0.15);
+  backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
   animation: modalFadeIn 0.3s ease;
 }
 
@@ -1454,10 +1298,11 @@ export default {
 }
 
 .modal-title {
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: #FFFFFF;
   margin: 0;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
 }
 
 .modal-close {
@@ -1478,19 +1323,19 @@ export default {
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .form-hint {
   color: #A8D1FF;
   font-size: 0.9rem;
-  margin-top: -10px;
+  margin-top: -6px;
 }
 
 .commission-info {
-  padding: 15px;
+  padding: 16px;
   background: rgba(10, 77, 140, 0.2);
-  border-radius: 12px;
+  border-radius: 16px;
   border: 1px solid rgba(168, 209, 255, 0.2);
 }
 
@@ -1515,22 +1360,23 @@ export default {
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(168, 209, 255, 0.1);
 }
 
 .modal-button {
-  padding: 12px 30px;
+  width: 100%;
+  padding: 15px 18px;
   border-radius: 9999px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
+  border: 1px solid rgba(168, 209, 255, 0.3);
 }
 
 .modal-button.cancel {
@@ -1544,13 +1390,14 @@ export default {
 }
 
 .modal-button.submit {
-  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  background: rgba(10, 77, 140, 0.45);
   color: #FFFFFF;
-  border: 1px solid rgba(168, 209, 255, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-button.submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1A5D9C, #2A7BC3);
+  background: rgba(10, 77, 140, 0.62);
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(10, 77, 140, 0.4);
 }

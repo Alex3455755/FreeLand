@@ -4,19 +4,20 @@ namespace App\Http\Controllers;
 
 use App\Models\Application;
 use App\Models\Chat;
-use App\Services\PhpMailerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class ApplicationController extends Controller
 {
-    private PhpMailerService $mailer;
-
-    public function __construct(PhpMailerService $mailer)
-    {
-        $this->mailer = $mailer;
-    }
+    // Временно отключено: отправка email уведомлений
+    // private PhpMailerService $mailer;
+    //
+    // public function __construct(PhpMailerService $mailer)
+    // {
+    //     $this->mailer = $mailer;
+    // }
     /**
      * Все заявки пользователя
      */
@@ -74,13 +75,21 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_ACCEPTED,
         ]);
 
-        $this->sendApplicationStatusEmail($application, true);
+        // Временно отключено: отправка email уведомлений
+        // $this->sendApplicationStatusEmail($application, true);
 
         // Синхронизируем проект с принятым исполнителем
-        $project->update([
-            'freelancer_id' => $freelancerId,
+        $projectUpdateData = [
             'status' => $project->status === 'open' ? 'in_progress' : $project->status,
-        ]);
+        ];
+        if (Schema::hasColumn('projects', 'freelancer_id')) {
+            $projectUpdateData['freelancer_id'] = $freelancerId;
+        }
+        if (Schema::hasColumn('projects', 'frelancer_id')) {
+            $projectUpdateData['frelancer_id'] = $freelancerId;
+        }
+
+        $project->update($projectUpdateData);
 
         // Создаём или исправляем чат проекта, чтобы он был виден обеим сторонам
         $chat = Chat::firstOrNew([
@@ -110,7 +119,8 @@ class ApplicationController extends Controller
             'status' => Application::STATUS_REJECTED,
         ]);
 
-        $this->sendApplicationStatusEmail($application, false);
+        // Временно отключено: отправка email уведомлений
+        // $this->sendApplicationStatusEmail($application, false);
 
         return response()->json($application);
     }
@@ -157,24 +167,25 @@ class ApplicationController extends Controller
         return $request->user()?->id ?? Auth::id();
     }
 
-    private function sendApplicationStatusEmail(Application $application, bool $accepted): void
-    {
-        $application->loadMissing(['user', 'project']);
-        $freelancer = $application->user;
-        if (!$freelancer || !$freelancer->login) {
-            return;
-        }
-
-        $projectTitle = $application->project?->title ?: ('#' . $application->project_id);
-        $name = $freelancer->full_name ?: $freelancer->login;
-        $subject = $accepted ? 'Ваша заявка принята' : 'Ваша заявка отклонена';
-        $statusText = $accepted ? 'принята' : 'отклонена';
-
-        $this->mailer->send(
-            $freelancer->login,
-            $name,
-            $subject,
-            "Здравствуйте, {$name}!<br><br>Ваша заявка по проекту <b>{$projectTitle}</b> была {$statusText}."
-        );
-    }
+    // Временно отключено: отправка email уведомлений
+    // private function sendApplicationStatusEmail(Application $application, bool $accepted): void
+    // {
+    //     $application->loadMissing(['user', 'project']);
+    //     $freelancer = $application->user;
+    //     if (!$freelancer || !$freelancer->login) {
+    //         return;
+    //     }
+    //
+    //     $projectTitle = $application->project?->title ?: ('#' . $application->project_id);
+    //     $name = $freelancer->full_name ?: $freelancer->login;
+    //     $subject = $accepted ? 'Ваша заявка принята' : 'Ваша заявка отклонена';
+    //     $statusText = $accepted ? 'принята' : 'отклонена';
+    //
+    //     $this->mailer->send(
+    //         $freelancer->login,
+    //         $name,
+    //         $subject,
+    //         "Здравствуйте, {$name}!<br><br>Ваша заявка по проекту <b>{$projectTitle}</b> была {$statusText}."
+    //     );
+    // }
 }

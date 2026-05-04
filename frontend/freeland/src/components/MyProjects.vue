@@ -146,9 +146,18 @@
                 </div>
 
                 <div class="project-actions">
+                  <button
+                    v-if="canPayProject(project)"
+                    @click="payProject(project)"
+                    class="action-button pay-button"
+                    :disabled="payingProjectIds.includes(project.id)"
+                  >
+                    {{ payingProjectIds.includes(project.id) ? 'Оплата...' : 'Оплатить' }}
+                  </button>
+
                   <!-- Кнопка чата (если есть исполнитель) -->
                   <button 
-                    v-if="project.freelancer_id && (isCustomer || (isFreelancer && project.freelancer_id === user.id))"
+                    v-if="getProjectFreelancerId(project) && (isCustomer || (isFreelancer && getProjectFreelancerId(project) === user.id))"
                     @click="goToMyChats(project.id)"
                     class="action-button chat-button"
                   >
@@ -310,6 +319,7 @@ export default {
       applications: [],
       applicationsLoading: false,
       updatingApplicationIds: [],
+      payingProjectIds: [],
       
       // Состояние UI
       showEditModal: false,
@@ -477,6 +487,24 @@ export default {
       return Boolean(this.isCustomer && this.user && project?.customer_id === this.user.id)
     },
 
+    canPayProject(project) {
+      const freelancerId = this.getProjectFreelancerId(project)
+      return Boolean(
+        this.isCustomer &&
+        this.user &&
+        project &&
+        project.customer_id === this.user.id &&
+        freelancerId &&
+        Number(project.budget) > 0 &&
+        !project.has_paid_transfer
+      )
+    },
+
+    getProjectFreelancerId(project) {
+      if (!project) return null
+      return Number(project.freelancer_id || project.frelancer_id || project.freelancer?.id || 0) || null
+    },
+
     getProjectApplications(projectId) {
       if (!projectId || !this.isCustomer || !this.user) {
         return []
@@ -545,6 +573,51 @@ export default {
         alert(error.message || 'Ошибка при обновлении заявки')
       } finally {
         this.updatingApplicationIds = this.updatingApplicationIds.filter(id => id !== application.id)
+      }
+    },
+
+    async payProject(project) {
+      const token = localStorage.getItem('token')
+      if (!token || !project?.id) {
+        return
+      }
+
+      if (this.payingProjectIds.includes(project.id)) {
+        return
+      }
+
+      const budget = Number(project.budget || 0)
+      const isConfirmed = window.confirm(
+        `Подтвердить оплату проекта "${project.title}" на сумму ${this.formatBudget(budget)}?`
+      )
+
+      if (!isConfirmed) {
+        return
+      }
+
+      this.payingProjectIds.push(project.id)
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/projects/${project.id}/pay`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        const result = await response.json()
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Не удалось оплатить проект')
+        }
+
+        alert(result.message || 'Оплата выполнена')
+        await this.fetchMyProjects()
+      } catch (error) {
+        console.error('MyProjects - Ошибка оплаты проекта:', error)
+        alert(error.message || 'Ошибка при оплате проекта')
+      } finally {
+        this.payingProjectIds = this.payingProjectIds.filter(id => id !== project.id)
       }
     },
     
@@ -1116,6 +1189,17 @@ export default {
   color: #FFFFFF;
 }
 
+.action-button.pay-button {
+  background: rgba(46, 204, 113, 0.2);
+  border: 1px solid rgba(46, 204, 113, 0.4);
+  color: #2ecc71;
+}
+
+.action-button.pay-button:hover {
+  background: rgba(46, 204, 113, 0.35);
+  color: #FFFFFF;
+}
+
 .action-button.edit-button {
   background: rgba(241, 196, 15, 0.2);
   border: 1px solid rgba(241, 196, 15, 0.4);
@@ -1446,12 +1530,16 @@ export default {
 }
 
 .modal-container {
-  max-width: 600px;
+  max-width: 560px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 30px;
-  border: 1px solid rgba(168, 209, 255, 0.2);
+  padding: 44px 34px;
+  border: 1px solid rgba(168, 209, 255, 0.24);
+  border-radius: 32px;
+  background: rgba(10, 77, 140, 0.15);
+  backdrop-filter: blur(25px) saturate(180%);
+  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
   animation: modalFadeIn 0.3s ease;
 }
 
@@ -1463,9 +1551,10 @@ export default {
 }
 
 .modal-title {
-  font-size: 1.8rem;
-  font-weight: 600;
+  font-size: 2rem;
+  font-weight: 700;
   color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
 }
 
 .modal-close {
@@ -1486,7 +1575,7 @@ export default {
 .modal-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .form-group {
@@ -1497,8 +1586,9 @@ export default {
 
 .form-group label {
   color: #F0F8FF;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
+  margin-left: 5px;
 }
 
 .required {
@@ -1513,10 +1603,10 @@ export default {
 }
 
 .form-input {
-  padding: 12px 16px;
+  padding: 15px 20px;
   background: rgba(10, 77, 140, 0.2);
   border: 1px solid rgba(168, 209, 255, 0.2);
-  border-radius: 12px;
+  border-radius: 16px;
   color: #FFFFFF;
   font-size: 1rem;
   transition: all 0.3s ease;
@@ -1526,25 +1616,27 @@ export default {
   outline: none;
   border-color: rgba(168, 209, 255, 0.4);
   background: rgba(10, 77, 140, 0.3);
+  box-shadow: 0 0 20px rgba(168, 209, 255, 0.1);
 }
 
 .modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
   margin-top: 20px;
   padding-top: 20px;
   border-top: 1px solid rgba(168, 209, 255, 0.1);
 }
 
 .modal-button {
-  padding: 12px 30px;
+  width: 100%;
+  padding: 15px 18px;
   border-radius: 9999px;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
+  border: 1px solid rgba(168, 209, 255, 0.3);
 }
 
 .modal-button.cancel {
@@ -1558,15 +1650,31 @@ export default {
 }
 
 .modal-button.submit {
-  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  background: rgba(10, 77, 140, 0.45);
   color: #FFFFFF;
-  border: 1px solid rgba(168, 209, 255, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .modal-button.submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1A5D9C, #2A7BC3);
+  background: rgba(10, 77, 140, 0.62);
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(10, 77, 140, 0.4);
+}
+
+.modal-button.submit::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 220%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(168, 209, 255, 0.35), transparent);
+  transition: 0.8s;
+}
+
+.modal-button.submit:hover::before {
+  left: 100%;
 }
 
 .modal-button.submit:disabled {
@@ -1739,6 +1847,10 @@ export default {
   }
   
   .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-actions {
     grid-template-columns: 1fr;
   }
 }

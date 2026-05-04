@@ -117,10 +117,19 @@ public function deposit(Request $request)
             'amount' => 'required|numeric|min:1'
         ]);
         
-        $amount = $validated['amount'];
-        
-        // Обновляем баланс
-        $user->balance += $amount;
+        $amount = (float) $validated['amount'];
+        $commission = round($amount * 0.05, 2);
+        $netAmount = $amount - $commission;
+
+        if ($netAmount <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Сумма пополнения слишком мала с учетом комиссии 5%'
+            ], 400);
+        }
+
+        // Обновляем баланс с учетом комиссии
+        $user->balance += $netAmount;
         $user->save();
         
         // СОЗДАЕМ ЗАПИСЬ О ПОПОЛНЕНИИ
@@ -128,7 +137,7 @@ public function deposit(Request $request)
             'customer_id' => $user->id,
             'freelancer_id' => $user->id, // для input/output ставим тот же ID
             'amount' => $amount,
-            'commission' => 0,
+            'commission' => $commission,
             'status' => 'paid',
             'type' => 'input'
         ];
@@ -137,7 +146,7 @@ public function deposit(Request $request)
             'customer_id' => $user->id,
             'freelancer_id' => $user->id,
             'amount' => $amount,
-            'commission' => 0,
+            'commission' => $commission,
             'status' => 'paid',
             'type' => 'input',
             'created_at' => now(),
@@ -147,12 +156,13 @@ public function deposit(Request $request)
         Log::info('Пополнение баланса:', [
             'user_id' => $user->id,
             'amount' => $amount,
+            'commission' => $commission,
             'new_balance' => $user->balance
         ]);
         
         return response()->json([
             'success' => true,
-            'message' => "Баланс успешно пополнен на {$amount} ₽",
+            'message' => "Баланс пополнен. Сумма: {$amount} ₽, комиссия 5%: {$commission} ₽, зачислено: {$netAmount} ₽",
             'balance' => $user->balance
         ]);
         
@@ -184,17 +194,19 @@ public function withdraw(Request $request)
             'amount' => 'required|numeric|min:1'
         ]);
         
-        $amount = $validated['amount'];
-        
-        if ($user->balance < $amount) {
+        $amount = (float) $validated['amount'];
+        $commission = round($amount * 0.05, 2);
+        $totalDeduction = $amount + $commission;
+
+        if ((float) $user->balance < $totalDeduction) {
             return response()->json([
                 'success' => false,
-                'message' => 'Недостаточно средств на балансе'
+                'message' => "Недостаточно средств на балансе с учетом комиссии 5%. Нужно {$totalDeduction} ₽"
             ], 400);
         }
         
-        // Обновляем баланс
-        $user->balance -= $amount;
+        // Обновляем баланс с учетом комиссии
+        $user->balance -= $totalDeduction;
         $user->save();
         
         // СОЗДАЕМ ЗАПИСЬ О ВЫВОДЕ
@@ -202,7 +214,7 @@ public function withdraw(Request $request)
             'customer_id' => $user->id,
             'freelancer_id' => $user->id, // для input/output ставим тот же ID
             'amount' => $amount,
-            'commission' => 0,
+            'commission' => $commission,
             'status' => 'paid',
             'type' => 'output'
         ];
@@ -211,7 +223,7 @@ public function withdraw(Request $request)
             'customer_id' => $user->id,
             'freelancer_id' => $user->id,
             'amount' => $amount,
-            'commission' => 0,
+            'commission' => $commission,
             'status' => 'paid',
             'type' => 'output',
             'created_at' => now(),
@@ -221,12 +233,13 @@ public function withdraw(Request $request)
         Log::info('Вывод средств:', [
             'user_id' => $user->id,
             'amount' => $amount,
+            'commission' => $commission,
             'new_balance' => $user->balance
         ]);
         
         return response()->json([
             'success' => true,
-            'message' => "Сумма {$amount} ₽ успешно выведена",
+            'message' => "Вывод выполнен. К выплате: {$amount} ₽, комиссия 5%: {$commission} ₽, списано: {$totalDeduction} ₽",
             'balance' => $user->balance
         ]);
         
@@ -329,6 +342,7 @@ public function withdraw(Request $request)
                 'amount' => $amount,
                 'commission' => $commission,
                 'status' => 'paid',
+                'type' => 'transfer',
                 'created_at' => now(),
                 'updated_at' => now()
             ]);

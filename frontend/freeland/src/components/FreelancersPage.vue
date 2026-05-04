@@ -93,14 +93,28 @@
             <div class="freelancer-login" v-if="freelancer.login">
               @{{ freelancer.login }}
             </div>
-            
-            <!-- Статистика -->
-            <!-- <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-value">{{ freelancer.rating || '0.0' }}</span>
-                <span class="stat-label">Рейтинг</span>
-              </div>
-            </div> -->
+
+            <div class="freelancer-specialization">
+              {{ freelancer.specialization || 'Универсальный специалист' }}
+            </div>
+
+            <div class="freelancer-meta">
+              <span class="meta-chip">
+                Рейтинг: {{ Number(freelancer.rating || 0).toFixed(1) }}
+              </span>
+              <span class="meta-chip" v-if="freelancer.created_at">
+                На платформе с {{ new Date(freelancer.created_at).getFullYear() }}
+              </span>
+            </div>
+
+            <div class="card-footer">
+              <button class="contact-button" @click.stop="contactFreelancer(freelancer.id)">
+                Написать
+              </button>
+              <button class="profile-button" @click.stop="openFreelancerProfile(freelancer.id)">
+                Профиль
+              </button>
+            </div>
             
           </div>
         </div>
@@ -486,6 +500,15 @@ export default {
   box-shadow: 0 30px 60px rgba(8, 51, 88, 0.6);
 }
 
+.freelancer-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(168, 209, 255, 0.12), transparent 45%);
+  pointer-events: none;
+}
+
 .avatar-container {
   position: relative;
   width: 120px;
@@ -552,8 +575,40 @@ export default {
 .freelancer-login {
   color: #A8D1FF;
   font-size: 0.95rem;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   text-align: center;
+}
+
+.freelancer-specialization {
+  color: #f0f8ff;
+  text-align: center;
+  opacity: 0.9;
+  margin-bottom: 14px;
+  min-height: 24px;
+}
+
+.freelancer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.meta-chip {
+  padding: 6px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(168, 209, 255, 0.22);
+  background: rgba(10, 77, 140, 0.2);
+  color: #d9ecff;
+  font-size: 0.8rem;
+}
+
+.card-footer {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .specialization {
@@ -666,9 +721,9 @@ export default {
 }
 
 .contact-button {
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
-  border: none;
+  padding: 11px 16px;
+  background: rgba(10, 77, 140, 0.5);
+  border: 1px solid rgba(168, 209, 255, 0.3);
   border-radius: 9999px;
   color: #FFFFFF;
   font-size: 0.95rem;
@@ -678,9 +733,25 @@ export default {
 }
 
 .contact-button:hover {
-  background: linear-gradient(135deg, #1A6BB3, #2A7FC9);
-  transform: scale(1.05);
+  background: rgba(10, 77, 140, 0.68);
+  transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(8, 51, 88, 0.4);
+}
+
+.profile-button {
+  padding: 11px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(168, 209, 255, 0.24);
+  border-radius: 9999px;
+  color: #F0F8FF;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-button:hover {
+  background: rgba(168, 209, 255, 0.16);
+  transform: translateY(-1px);
 }
 
 .loading-state {
