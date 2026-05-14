@@ -302,12 +302,12 @@
           </div>
           <div v-if="transactionAmount > 0" class="commission-info">
             <div class="info-row">
-              <span>Комиссия (5%):</span>
-              <span>{{ formatBalance(transactionAmount * 0.05) }}</span>
+              <span>Комиссия ({{ depositCommissionPercent }}%):</span>
+              <span>{{ formatBalance(transactionAmount * depositFeeRate) }}</span>
             </div>
             <div class="info-row total">
               <span>Зачислится на баланс:</span>
-              <span>{{ formatBalance(transactionAmount * 0.95) }}</span>
+              <span>{{ formatBalance(transactionAmount * (1 - depositFeeRate)) }}</span>
             </div>
           </div>
           
@@ -341,19 +341,19 @@
               class="form-input ios-glass"
               placeholder="Введите сумму"
               min="1"
-              :max="Math.floor((user?.balance || 0) / 1.05)"
+              :max="maxWithdrawRequestAmount"
               required
             />
           </div>
           <div class="form-hint">Доступно на балансе: {{ formatBalance(user?.balance || 0) }}</div>
           <div v-if="transactionAmount > 0" class="commission-info">
             <div class="info-row">
-              <span>Комиссия (5%):</span>
-              <span>{{ formatBalance(transactionAmount * 0.05) }}</span>
+              <span>Комиссия ({{ withdrawCommissionPercent }}%):</span>
+              <span>{{ formatBalance(transactionAmount * withdrawFeeRate) }}</span>
             </div>
             <div class="info-row total">
               <span>Итого спишется с баланса:</span>
-              <span>{{ formatBalance(transactionAmount * 1.05) }}</span>
+              <span>{{ formatBalance(transactionAmount * withdrawTotalFactor) }}</span>
             </div>
           </div>
           
@@ -417,7 +417,10 @@ export default {
       
       transactionAmount: null,
       transactionProcessing: false,
-      
+
+      depositCommissionPercent: 5,
+      withdrawCommissionPercent: 5,
+
       apiBaseUrl: '',
       avatarFile: null,
       avatarUploading: false
@@ -435,6 +438,27 @@ export default {
     
     totalCommission() {
       return this.sentPayments.reduce((sum, p) => sum + p.commission, 0)
+    },
+
+    depositFeeRate() {
+      return (Number(this.depositCommissionPercent) || 0) / 100
+    },
+
+    withdrawFeeRate() {
+      return (Number(this.withdrawCommissionPercent) || 0) / 100
+    },
+
+    withdrawTotalFactor() {
+      return 1 + this.withdrawFeeRate
+    },
+
+    maxWithdrawRequestAmount() {
+      const bal = Number(this.user?.balance) || 0
+      const f = this.withdrawTotalFactor
+      if (f <= 0) {
+        return 0
+      }
+      return Math.floor((bal / f) * 100) / 100
     }
   },
   
@@ -443,6 +467,21 @@ export default {
   },
   
   methods: {
+    async fetchCommissionRates() {
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/commission-rates`, {
+          headers: { Accept: 'application/json' }
+        })
+        const data = await response.json()
+        if (response.ok && data.success) {
+          this.depositCommissionPercent = Number(data.deposit_commission_percent) || 5
+          this.withdrawCommissionPercent = Number(data.withdraw_commission_percent) || 5
+        }
+      } catch (e) {
+        console.warn('commission-rates', e)
+      }
+    },
+
     userAvatar(u) {
       return avatarSrc(u, this.apiBaseUrl)
     },
@@ -498,7 +537,9 @@ export default {
         this.$router.push('/login')
         return
       }
-      
+
+      await this.fetchCommissionRates()
+
       try {
         let response = await fetch(`${this.apiBaseUrl}/api/user`, {
           headers: {

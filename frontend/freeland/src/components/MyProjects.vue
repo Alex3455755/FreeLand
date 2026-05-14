@@ -110,6 +110,9 @@
                 <div class="meta-item">
                   <span class="meta-value">{{ formatBudget(project.budget) }}</span>
                 </div>
+                <div v-if="project.has_escrow_hold" class="meta-item escrow-hint">
+                  <span class="meta-value">Средства зарезервированы</span>
+                </div>
                 
                 <div class="meta-item" v-if="project.deadline">
                   <span class="meta-value">{{ formatDate(project.deadline) }}</span>
@@ -153,6 +156,16 @@
                     :disabled="payingProjectIds.includes(project.id)"
                   >
                     {{ payingProjectIds.includes(project.id) ? 'Оплата...' : 'Оплатить' }}
+                  </button>
+
+                  <button
+                    v-if="canCancelProject(project)"
+                    type="button"
+                    @click="cancelProject(project)"
+                    class="action-button reject-button"
+                    :disabled="cancellingProjectIds.includes(project.id)"
+                  >
+                    {{ cancellingProjectIds.includes(project.id) ? 'Отмена...' : 'Отменить заказ' }}
                   </button>
 
                   <!-- Кнопка чата (если есть исполнитель) -->
@@ -321,6 +334,7 @@ export default {
       applicationsLoading: false,
       updatingApplicationIds: [],
       payingProjectIds: [],
+      cancellingProjectIds: [],
       
       // Состояние UI
       showEditModal: false,
@@ -501,6 +515,17 @@ export default {
       )
     },
 
+    canCancelProject(project) {
+      return Boolean(
+        this.isCustomer &&
+        this.user &&
+        project &&
+        project.customer_id === this.user.id &&
+        project.has_escrow_hold &&
+        !project.has_paid_transfer
+      )
+    },
+
     getProjectFreelancerId(project) {
       if (!project) return null
       return Number(project.freelancer_id || project.frelancer_id || project.freelancer?.id || 0) || null
@@ -621,23 +646,67 @@ export default {
         this.payingProjectIds = this.payingProjectIds.filter(id => id !== project.id)
       }
     },
-    
-    // Получение категорий
+
+    async cancelProject(project) {
+      const token = localStorage.getItem('token')
+      if (!token || !project?.id) {
+        return
+      }
+
+      if (this.cancellingProjectIds.includes(project.id)) {
+        return
+      }
+
+      const budget = Number(project.budget || 0)
+      const isConfirmed = window.confirm(
+        `Отменить заказ «${project.title}»? Сумма ${this.formatBudget(budget)} вернётся на ваш баланс.`
+      )
+
+      if (!isConfirmed) {
+        return
+      }
+
+      this.cancellingProjectIds.push(project.id)
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/projects/${project.id}/cancel`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        const result = await response.json()
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || 'Не удалось отменить заказ')
+        }
+
+        alert(result.message || 'Заказ отменён')
+        await this.fetchMyProjects()
+      } catch (error) {
+        console.error('MyProjects - Ошибка отмены заказа:', error)
+        alert(error.message || 'Ошибка при отмене заказа')
+      } finally {
+        this.cancellingProjectIds = this.cancellingProjectIds.filter(id => id !== project.id)
+      }
+    },
+
     async fetchCategories() {
       try {
         const response = await fetch(`${this.apiBaseUrl}/api/categories`)
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-        
+
         const data = await response.json()
         this.categories = data
       } catch (error) {
         console.error('Ошибка при загрузке категорий:', error)
       }
     },
-    
+
     // Редактирование проекта
     editProject(project) {
       this.editingProject = { ...project }

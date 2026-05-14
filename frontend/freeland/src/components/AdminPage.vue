@@ -63,6 +63,7 @@
                   <th>Роль</th>
                   <th>Баланс</th>
                   <th>Рейтинг</th>
+                  <th>Блокировка</th>
                   <th>Действия</th>
                 </tr>
               </thead>
@@ -75,8 +76,21 @@
                   <td>{{ user.role || '—' }}</td>
                   <td>{{ user.balance || '—' }}</td>
                   <td>{{ user.rating || '—' }}</td>
+                  <td>
+                    <span class="status-badge" :class="userIsBanned(user) ? 'refunded' : 'paid'">
+                      {{ userIsBanned(user) ? 'Заблокирован' : 'Активен' }}
+                    </span>
+                  </td>
                   <td class="actions">
                     <button type="button" class="action-btn edit" @click="openUserModal(user)">Изменить</button>
+                    <button
+                      type="button"
+                      class="action-btn delete"
+                      :disabled="adminUserId && Number(user.id) === Number(adminUserId)"
+                      @click="toggleUserBan(user, !userIsBanned(user))"
+                    >
+                      {{ userIsBanned(user) ? 'Разбанить' : 'Забанить' }}
+                    </button>
                     <button type="button" class="action-btn delete" @click="confirmDelete('users', user.id, user.full_name || user.login)">Удалить</button>
                   </td>
                 </tr>
@@ -270,6 +284,138 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- Статистика -->
+        <div v-if="activeTab === 'statistics'" class="admin-section">
+          <div class="section-header">
+            <h2 class="section-title">Статистика и аналитика</h2>
+          </div>
+
+          <div v-if="!stats" class="ios-glass stats-placeholder">
+            <p>Загрузка статистики…</p>
+          </div>
+
+          <template v-else>
+            <div class="stats-cards">
+              <div class="stat-card ios-glass">
+                <div class="stat-card-label">Всего заказов</div>
+                <div class="stat-card-value">{{ stats.projects_total }}</div>
+              </div>
+              <div class="stat-card ios-glass">
+                <div class="stat-card-label">Доход сайта (комиссии)</div>
+                <div class="stat-card-value">{{ formatBudget(stats.commission_total) }}</div>
+              </div>
+            </div>
+
+            <div class="table-container ios-glass" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Комиссия по типам операций</h3>
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Тип</th>
+                    <th>Сумма комиссии</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(sum, type) in stats.commission_by_type" :key="type">
+                    <td>{{ paymentTypeLabel(type) }}</td>
+                    <td>{{ formatBudget(sum) }}</td>
+                  </tr>
+                  <tr v-if="!stats.commission_by_type || Object.keys(stats.commission_by_type).length === 0">
+                    <td colspan="2">Нет данных</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-container ios-glass" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Заказы по категориям</h3>
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Категория</th>
+                    <th>Количество заказов</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="row in stats.projects_by_category" :key="row.category_id">
+                    <td>{{ row.category_name }}</td>
+                    <td>{{ row.projects_count }}</td>
+                  </tr>
+                  <tr v-if="!stats.projects_by_category || stats.projects_by_category.length === 0">
+                    <td colspan="2">Нет данных</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="table-container ios-glass" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Топ исполнителей (оплаченные проекты)</h3>
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Исполнитель</th>
+                    <th>Оплаченных заказов</th>
+                    <th>Оборот по оплатам</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, idx) in stats.top_freelancers" :key="row.user_id">
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ row.full_name || row.login || ('ID ' + row.user_id) }}</td>
+                    <td>{{ row.paid_projects_count }}</td>
+                    <td>{{ formatBudget(row.total_volume) }}</td>
+                  </tr>
+                  <tr v-if="!stats.top_freelancers || stats.top_freelancers.length === 0">
+                    <td colspan="4">Пока нет оплаченных заказов с исполнителем</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </template>
+        </div>
+
+        <!-- Комиссии -->
+        <div v-if="activeTab === 'settings'" class="admin-section">
+          <div class="section-header">
+            <h2 class="section-title">Комиссии пополнения и вывода</h2>
+          </div>
+          <div class="ios-glass" style="padding: 24px; max-width: 480px;">
+            <p style="opacity: 0.85; margin-bottom: 16px;">
+              Проценты применяются ко всему сайту. Переводы между пользователями используют комиссию вывода.
+            </p>
+            <form @submit.prevent="saveCommissionSettings" class="modal-form">
+              <div class="form-group">
+                <label>Комиссия за пополнение (%)</label>
+                <input
+                  v-model.number="commissionForm.deposit_commission_percent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="form-input ios-glass"
+                  required
+                >
+              </div>
+              <div class="form-group">
+                <label>Комиссия за вывод (%)</label>
+                <input
+                  v-model.number="commissionForm.withdraw_commission_percent"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  class="form-input ios-glass"
+                  required
+                >
+              </div>
+              <button type="submit" class="save-button ios-glass" :disabled="commissionSaving">
+                {{ commissionSaving ? 'Сохранение…' : 'Сохранить' }}
+              </button>
+            </form>
           </div>
         </div>
       </div>
@@ -477,12 +623,22 @@ export default {
     return {
       activeTab: 'users',
       tabs: [
-  { value: 'users', label: 'Пользователи', icon: '' },
-  { value: 'projects', label: 'Проекты', icon: '' },
-  { value: 'categories', label: 'Категории', icon: '' },
-  { value: 'comments', label: 'Комментарии', icon: '' },
-  { value: 'payments', label: 'Платежи', icon: '' },
-],
+        { value: 'users', label: 'Пользователи', icon: '' },
+        { value: 'projects', label: 'Проекты', icon: '' },
+        { value: 'categories', label: 'Категории', icon: '' },
+        { value: 'comments', label: 'Комментарии', icon: '' },
+        { value: 'payments', label: 'Платежи', icon: '' },
+        { value: 'statistics', label: 'Статистика', icon: '' },
+        { value: 'settings', label: 'Комиссии', icon: '' }
+      ],
+
+      adminUserId: null,
+      stats: null,
+      commissionForm: {
+        deposit_commission_percent: 5,
+        withdraw_commission_percent: 5
+      },
+      commissionSaving: false,
       
       // Данные
       users: [],
@@ -521,54 +677,58 @@ export default {
     }
   },
   
-  created() {
-    this.fetchAllData();
-    this.initParticles();
-  this.checkAdminAccess();
-  this.fetchAllData();
-  this.initParticles();
+  mounted() {
+    this.bootstrapAdminPanel()
   },
   
   methods: {
     async checkAdminAccess() {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
-      // Нет токена → на логин
-      this.$router.push('/login');
-      return;
-    }
+      const token = localStorage.getItem('token')
 
-    try {
-      const response = await fetch(`${this.apiBaseUrl}/api/user`, {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${token}`
+      if (!token) {
+        this.$router.push('/login')
+        return
+      }
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/user`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        if (!response.ok) {
+          localStorage.removeItem('token')
+          this.$router.push('/login')
+          return
         }
-      });
 
-      if (!response.ok) {
-        localStorage.removeItem('token');
-        this.$router.push('/login');
-        return;
+        const data = await response.json()
+
+        if (!data.success || !data.user || data.user.role !== 'admin') {
+          this.$router.push('/')
+          return
+        }
+
+        this.adminUserId = data.user.id
+      } catch (error) {
+        console.error('Ошибка проверки доступа:', error)
+        localStorage.removeItem('token')
+        this.$router.push('/login')
       }
+    },
 
-      const data = await response.json();
-
-      if (!data.success || !data.user || data.user.role !== 'admin') {
-        // Не админ → перенаправляем на главную или показываем ошибку
-        this.$router.push('/');
-        // Или можно показать уведомление:
-        // this.showNotification('Доступ запрещён. Только для администраторов', 'error');
+    async bootstrapAdminPanel() {
+      await this.checkAdminAccess()
+      if (!this.adminUserId) {
+        return
       }
-      
-      // Если всё ок — продолжаем загрузку данных
-    } catch (error) {
-      console.error('Ошибка проверки доступа:', error);
-      localStorage.removeItem('token');
-      this.$router.push('/login');
-    }
-  },
+      this.initParticles()
+      await this.fetchAllData()
+      await this.loadCommissionSettingsForm()
+      await this.fetchStatistics()
+    },
     async fetchAllData() {
       this.loading = true;
       try {
@@ -589,10 +749,157 @@ export default {
     },
     
     async fetchUsers() {
-      const response = await fetch(`${this.apiBaseUrl}/api/users`);
-      const data = await response.json();
-      console.log(data);
-      this.users = data;
+      const token = localStorage.getItem('token')
+      if (!token) {
+        this.users = []
+        return
+      }
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/users`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        if (!response.ok) {
+          this.users = []
+          return
+        }
+        const data = await response.json()
+        this.users = Array.isArray(data) ? data : []
+      } catch (e) {
+        console.error('fetchUsers', e)
+        this.users = []
+      }
+    },
+
+    async loadCommissionSettingsForm() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        return
+      }
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/settings/commissions`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.success) {
+          this.commissionForm.deposit_commission_percent = Number(data.deposit_commission_percent) || 0
+          this.commissionForm.withdraw_commission_percent = Number(data.withdraw_commission_percent) || 0
+        }
+      } catch (e) {
+        console.error('loadCommissionSettingsForm', e)
+      }
+    },
+
+    async saveCommissionSettings() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        return
+      }
+      this.commissionSaving = true
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/settings/commissions`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            deposit_commission_percent: this.commissionForm.deposit_commission_percent,
+            withdraw_commission_percent: this.commissionForm.withdraw_commission_percent
+          })
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.success) {
+          this.showNotification(data.message || 'Комиссии сохранены', 'success')
+          await this.loadCommissionSettingsForm()
+        } else {
+          this.showNotification(data.message || 'Не удалось сохранить', 'error')
+        }
+      } catch (e) {
+        console.error(e)
+        this.showNotification('Ошибка сохранения комиссий', 'error')
+      } finally {
+        this.commissionSaving = false
+      }
+    },
+
+    async fetchStatistics() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        this.stats = null
+        return
+      }
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/statistics`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.success) {
+          this.stats = data
+        } else {
+          this.stats = null
+        }
+      } catch (e) {
+        console.error('fetchStatistics', e)
+        this.stats = null
+      }
+    },
+
+    userIsBanned(user) {
+      if (!user) {
+        return false
+      }
+      return Number(user.is_banned) === 1 || Number(user.isBanned) === 1
+    },
+
+    paymentTypeLabel(type) {
+      const map = {
+        input: 'Пополнение',
+        output: 'Вывод',
+        transfer: 'Перевод'
+      }
+      return map[type] || type
+    },
+
+    async toggleUserBan(user, banned) {
+      const token = localStorage.getItem('token')
+      if (!token || !user?.id) {
+        return
+      }
+      const action = banned ? 'заблокировать' : 'разблокировать'
+      if (!window.confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} пользователя «${user.full_name || user.login}»?`)) {
+        return
+      }
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/users/${user.id}/ban`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ banned })
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.success) {
+          this.showNotification(data.message || 'Готово', 'success')
+          await this.fetchUsers()
+        } else {
+          this.showNotification(data.message || 'Ошибка', 'error')
+        }
+      } catch (e) {
+        console.error(e)
+        this.showNotification('Ошибка при смене статуса блокировки', 'error')
+      }
     },
     
     async fetchProjects() {
@@ -1116,6 +1423,157 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 30px;
   margin-bottom: 60px;
+}
+/* Статистика и карточки */
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.stat-card {
+  padding: 28px 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(168, 209, 255, 0.4);
+  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.4);
+}
+
+.stat-card-label {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #A8D1FF;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.stat-card-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+}
+
+.stats-placeholder {
+  padding: 60px 40px;
+  text-align: center;
+  color: #F0F8FF;
+  font-size: 1.1rem;
+}
+
+/* Таблицы внутри статистики */
+.table-container h3 {
+  margin-bottom: 16px;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Общие улучшения для всех таблиц */
+.admin-table th {
+  background: rgba(10, 77, 140, 0.15);
+  font-weight: 600;
+}
+
+.admin-table td {
+  vertical-align: middle;
+}
+
+/* Кнопка "Сохранить" в настройках */
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.save-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Улучшенные стили для селектов */
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A8D1FF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+select.form-input option {
+  background: #0A1428;
+  color: #F0F8FF;
+}
+
+/* Сообщения об ошибках / уведомления */
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  background: rgba(10, 77, 140, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  color: #FFFFFF;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+}
+
+.notification.success {
+  background: rgba(39, 174, 96, 0.9);
+  border-color: rgba(46, 204, 113, 0.5);
+}
+
+.notification.error {
+  background: rgba(231, 76, 60, 0.9);
+  border-color: rgba(231, 76, 60, 0.5);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Стили для загрузки */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(168, 209, 255, 0.2);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .project-card-wrapper {

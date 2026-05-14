@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\COntrollers\ProjectController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\CategoryRequestController;
+use App\Http\Controllers\AdminController;
 
 
 
@@ -28,24 +30,25 @@ Route::get('/test', function() {
     return response()->json(['message' => 'API работает']);
 });
 
+Route::get('/commission-rates', [AdminController::class, 'getCommissionSettings']);
 
 //Авторизация
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
-    
+
     Route::post('/logout', function (Request $request) {
-    // Удаляем все токены пользователя
-    if ($request->user()) {
-        $request->user()->tokens()->delete();
-        
-        // Если используете сессии
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-    }
-    
-    return response()->json(['success' => true, 'message' => 'Выход выполнен']);
-})->middleware('auth:sanctum');
+        // Удаляем все токены пользователя
+        if ($request->user()) {
+            $request->user()->tokens()->delete();
+
+            // Если используете сессии
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
+
+        return response()->json(['success' => true, 'message' => 'Выход выполнен']);
+    });
 });
 Route::post('/login', [LoginController::class, 'login'])
     ->middleware([\Illuminate\Session\Middleware\StartSession::class]);
@@ -63,7 +66,6 @@ Route::get('/users/destroy/{user}',[UserController::class,'destroy']);
 
 //Projects
 Route::get('/projects',[ProjectController::class,'index']);
-Route::post('/projects/add',[ProjectController::class,'store']);
 Route::post('/projects/edit',[ProjectController::class,'update']);
 Route::get('/projects/{project}',[ProjectController::class,'show']);
 Route::get('projects/destroy/{project}',[ProjectController::class,'destroy']);
@@ -95,7 +97,7 @@ Route::post('/messages/edit',[MessageController::class,'update']);
 Route::get('/messages/destroy/{payment}',[MessageController::class,'destroy']);
 
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
     // Профиль
     Route::get('/profil/{user}', [ProfileController::class, 'index']);
     Route::post('/profile/update', [ProfileController::class, 'update']);
@@ -113,7 +115,13 @@ Route::get('/reviews/latest', [ReviewController::class, 'getLatest']);
 Route::get('/reviews/{id}', [ReviewController::class, 'show']);
 
 // Маршруты для администратора (с middleware auth и admin)
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'not_banned', 'admin'])->group(function () {
+    Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::patch('/admin/users/{user}/ban', [AdminController::class, 'setUserBanned']);
+    Route::get('/admin/settings/commissions', [AdminController::class, 'getCommissionSettings']);
+    Route::put('/admin/settings/commissions', [AdminController::class, 'updateCommissionSettings']);
+    Route::get('/admin/statistics', [AdminController::class, 'statistics']);
+
     Route::get('/admin/reviews/pending', [ReviewController::class, 'getPending']);
     Route::get('/admin/reviews/stats', [ReviewController::class, 'getStats']);
     Route::post('/admin/reviews/search', [ReviewController::class, 'search']);
@@ -128,7 +136,7 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::patch('/admin/category-requests/{categoryRequest}/reject', [CategoryRequestController::class, 'reject']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
 
     // Чаты
     Route::get('/chats/unread-count', [ChatController::class, 'unreadCount']);
@@ -142,7 +150,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
 
     // заявки пользователя / все (если нужно)
     Route::get('/applications', [ApplicationController::class, 'index']);
@@ -162,7 +170,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::patch('/applications/{application}/reject', [ApplicationController::class, 'reject']);
 
+    Route::post('/projects/add', [ProjectController::class, 'store']);
     Route::post('/projects/{project}/pay', [ProjectController::class, 'pay']);
+    Route::post('/projects/{project}/cancel', [ProjectController::class, 'cancel']);
 
     // заявка на добавление новой категории (от пользователя)
     Route::post('/category-requests', [CategoryRequestController::class, 'store']);

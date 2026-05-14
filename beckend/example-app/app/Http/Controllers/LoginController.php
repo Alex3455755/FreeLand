@@ -18,6 +18,13 @@ class LoginController extends Controller
             ], 401);
         }
 
+        if ($user->isBanned()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Аккаунт заблокирован. Вход невозможен.',
+            ], 403);
+        }
+
         if (!$user->email_verified_at && $user->email_verification_code) {
             return response()->json([
                 'success' => false,

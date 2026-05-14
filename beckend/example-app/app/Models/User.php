@@ -22,6 +22,8 @@ class User extends Authenticatable
         'role',
         'balance',
         'rating',
+        'is_banned',
+        'isBanned',
     ];
 
     public function getAuthIdentifierName()
@@ -38,7 +40,21 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'balance' => 'decimal:2',
         'rating' => 'decimal:2',
+        'is_banned' => 'boolean',
+        'isBanned' => 'boolean',
     ];
+
+    public function isBanned(): bool
+    {
+        if (array_key_exists('isBanned', $this->attributes) && $this->attributes['isBanned'] !== null) {
+            return (int) $this->attributes['isBanned'] === 1;
+        }
+        if (array_key_exists('is_banned', $this->attributes) && $this->attributes['is_banned'] !== null) {
+            return (int) $this->attributes['is_banned'] === 1;
+        }
+
+        return false;
+    }
 
     public function customerProjects()
     {

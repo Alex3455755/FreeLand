@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Payment;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -162,13 +163,15 @@ public function deposit(Request $request)
         ]);
         
         $amount = (float) $validated['amount'];
-        $commission = round($amount * 0.05, 2);
+        $depositPct = SiteSetting::getFloatPercent('deposit_commission_percent', 5.0);
+        $rate = $depositPct / 100.0;
+        $commission = round($amount * $rate, 2);
         $netAmount = $amount - $commission;
 
         if ($netAmount <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Сумма пополнения слишком мала с учетом комиссии 5%'
+                'message' => "Сумма пополнения слишком мала с учётом комиссии {$depositPct}%"
             ], 400);
         }
 
@@ -206,7 +209,7 @@ public function deposit(Request $request)
         
         return response()->json([
             'success' => true,
-            'message' => "Баланс пополнен. Сумма: {$amount} ₽, комиссия 5%: {$commission} ₽, зачислено: {$netAmount} ₽",
+            'message' => "Баланс пополнен. Сумма: {$amount} ₽, комиссия {$depositPct}%: {$commission} ₽, зачислено: {$netAmount} ₽",
             'balance' => $user->balance
         ]);
         
@@ -239,13 +242,15 @@ public function withdraw(Request $request)
         ]);
         
         $amount = (float) $validated['amount'];
-        $commission = round($amount * 0.05, 2);
+        $withdrawPct = SiteSetting::getFloatPercent('withdraw_commission_percent', 5.0);
+        $rate = $withdrawPct / 100.0;
+        $commission = round($amount * $rate, 2);
         $totalDeduction = $amount + $commission;
 
         if ((float) $user->balance < $totalDeduction) {
             return response()->json([
                 'success' => false,
-                'message' => "Недостаточно средств на балансе с учетом комиссии 5%. Нужно {$totalDeduction} ₽"
+                'message' => "Недостаточно средств на балансе с учётом комиссии {$withdrawPct}%. Нужно {$totalDeduction} ₽"
             ], 400);
         }
         
@@ -283,7 +288,7 @@ public function withdraw(Request $request)
         
         return response()->json([
             'success' => true,
-            'message' => "Вывод выполнен. К выплате: {$amount} ₽, комиссия 5%: {$commission} ₽, списано: {$totalDeduction} ₽",
+            'message' => "Вывод выполнен. К выплате: {$amount} ₽, комиссия {$withdrawPct}%: {$commission} ₽, списано: {$totalDeduction} ₽",
             'balance' => $user->balance
         ]);
         
@@ -350,7 +355,9 @@ public function withdraw(Request $request)
             }
             
             $amount = (float) $validated['amount'];
-            $commission = round($amount * 0.05, 2);
+            $transferPct = SiteSetting::getFloatPercent('withdraw_commission_percent', 5.0);
+            $rate = $transferPct / 100.0;
+            $commission = round($amount * $rate, 2);
             $totalDeduction = $amount + $commission;
             
             // Принудительно преобразуем в float для сравнения
@@ -360,7 +367,7 @@ public function withdraw(Request $request)
             if ($senderBalance < $totalNeeded) {
                 return response()->json([
                     'success' => false,
-                    'message' => "Недостаточно средств. Баланс: {$senderBalance} ₽, нужно: {$totalNeeded} ₽ (включая комиссию 5%)"
+                    'message' => "Недостаточно средств. Баланс: {$senderBalance} ₽, нужно: {$totalNeeded} ₽ (включая комиссию {$transferPct}%)"
                 ], 400);
             }
             
@@ -408,7 +415,7 @@ public function withdraw(Request $request)
             
             return response()->json([
                 'success' => true,
-                'message' => "Перевод выполнен успешно. Получатель: {$receiver->full_name}, сумма: {$amount} ₽, комиссия: {$commission} ₽",
+                'message' => "Перевод выполнен успешно. Получатель: {$receiver->full_name}, сумма: {$amount} ₽, комиссия {$transferPct}%: {$commission} ₽",
                 'balance' => $sender->balance,
                 'payment' => $payment
             ]);

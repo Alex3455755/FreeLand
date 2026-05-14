@@ -16,7 +16,8 @@ class AuthController extends Controller
                 'login' => $request->user()->login,
                 'role' => $request->user()->role,
                 'avatar' => $request->user()->avatar ?? null,
-                'balance' => $request->user()->balance?? null
+                'balance' => $request->user()->balance ?? null,
+                'is_banned' => $request->user()->isBanned(),
             ] : null
         ]);
     }
