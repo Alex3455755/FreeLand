@@ -849,17 +849,28 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 40px 0 80px;
-  padding-bottom: 0; 
 }
 
+/* основной контент */
 .container {
+  flex: 1;
+
+  width: 100%;
   max-width: 1200px;
+
   margin: 0 auto;
-  padding: 0 20px;
+
+  padding: 40px 20px;
+  box-sizing: border-box;
+
   position: relative;
   z-index: 20;
-  width: 100%;
+}
+
+/* footer */
+.footer {
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .icon-wrapper {

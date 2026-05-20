@@ -348,23 +348,26 @@ export default {
   display: flex;
   flex-direction: column;
   position: relative;
-  padding: 40px 0 80px;
-  padding-bottom: 0; 
-}
-.container {
-  flex: 1 0 auto;          /* ← ключевой момент */
-  display: flex;
-  flex-direction: column;
-  /* padding: 0 20px; уже есть — можно оставить */
 }
 
+/* Контент */
 .container {
+  flex: 1;
+  width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+
+  padding: 40px 20px 40px;
+  box-sizing: border-box;
+
   position: relative;
   z-index: 20;
-  width: 100%;
+}
+
+/* Футер */
+.footer {
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .freelancers-header {

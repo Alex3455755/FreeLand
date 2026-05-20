@@ -18,6 +18,8 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\CategoryRequestController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PasswordResetController;
+use App\Http\Controllers\UserAgreementController;
 
 
 
@@ -52,6 +54,11 @@ Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
 });
 Route::post('/login', [LoginController::class, 'login'])
     ->middleware([\Illuminate\Session\Middleware\StartSession::class]);
+
+Route::post('/forgot-password/send-code', [PasswordResetController::class, 'sendCode']);
+Route::post('/forgot-password/login', [PasswordResetController::class, 'loginWithCode']);
+Route::get('/user-agreement', [UserAgreementController::class, 'download']);
+
 //Регистрация
 Route::post('/registred',[RegisterController::class,'registred']);
 Route::post('/verify-email-code',[RegisterController::class,'verifyEmailCode']);

@@ -41,6 +41,22 @@
           </select>
         </div>
 
+        <div class="form-group agreement-group">
+          <a
+            href="/api/user-agreement"
+            class="agreement-download"
+            download="user-agreement-freeland.txt"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Скачать пользовательское соглашение
+          </a>
+          <label class="agreement-checkbox">
+            <input v-model="form.agreed_to_terms" type="checkbox" required />
+            <span>Я принимаю условия пользовательского соглашения</span>
+          </label>
+        </div>
+
         <div class="form-full">
           <button class="submit-button" :disabled="submitting">
             <span v-if="submitting" class="button-spinner"></span>
@@ -96,7 +112,8 @@ const form = reactive({
   login: '',
   avatar: '',
   password: '',
-  role: ''
+  role: '',
+  agreed_to_terms: false
 })
 
 const message = ref('')
@@ -123,6 +140,7 @@ const validateForm = () => {
   if (login.length < 3) return 'Логин должен быть не короче 3 символов'
   if (password.length < 6) return 'Пароль должен быть не короче 6 символов'
   if (!form.role) return 'Выберите роль'
+  if (!form.agreed_to_terms) return 'Необходимо принять пользовательское соглашение'
 
   return ''
 }
@@ -146,7 +164,8 @@ const handleRegister = async () => {
       login: form.login,
       avatar: form.avatar || null,
       password: form.password,
-      role: form.role
+      role: form.role,
+      agreed_to_terms: form.agreed_to_terms
     }
     const response = await fetch(`${API_URL}/api/users/add`, {
       method: 'POST',
@@ -513,6 +532,41 @@ const resendCode = async () => {
 
 .submit-button.resend {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.agreement-group {
+  gap: 12px;
+}
+
+.agreement-download {
+  display: inline-block;
+  color: #a8d1ff;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.agreement-download:hover {
+  color: #ffffff;
+}
+
+.agreement-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  color: #f0f8ff;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.agreement-checkbox input {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: #1a6bb3;
 }
 
 /* 📱 Мобильная версия */

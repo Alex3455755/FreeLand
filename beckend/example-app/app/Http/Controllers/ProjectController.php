@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon;
 
 class ProjectController extends Controller
 {
@@ -42,6 +43,7 @@ class ProjectController extends Controller
                     $p = $project->payments;
                     $project->setAttribute('has_paid_transfer', $p && $p->status === 'paid');
                     $project->setAttribute('has_escrow_hold', $p && $p->status === 'frozen');
+                    $project->setAttribute('is_overdue', $this->isProjectOverdue($project));
                 });
             };
 
@@ -308,7 +310,7 @@ class ProjectController extends Controller
         return $this->refundEscrowAndDeleteProject($project);
     }
 
-    public function pay(Project $project)
+    public function pay(Request $request, Project $project)
     {
         $user = Auth::user();
 
@@ -334,11 +336,21 @@ class ProjectController extends Controller
             ], 400);
         }
 
-        $amount = (float) $project->budget;
-        if ($amount <= 0) {
+        $budget = (float) $project->budget;
+        if ($budget <= 0) {
             return response()->json([
                 'success' => false,
                 'message' => 'У проекта не указан корректный бюджет',
+            ], 400);
+        }
+
+        $isOverdue = $this->isProjectOverdue($project);
+        $partialOverdue = $request->boolean('partial_overdue');
+
+        if ($partialOverdue && !$isOverdue) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Оплата 75% доступна только при просрочке дедлайна исполнителем',
             ], 400);
         }
 
@@ -354,31 +366,76 @@ class ProjectController extends Controller
             ], 400);
         }
 
+        $amount = $budget;
+        $refundToCustomer = 0.0;
+
         try {
-            DB::transaction(function () use ($project, $user, $amount, $freelancerId) {
+            DB::transaction(function () use (
+                $project,
+                $user,
+                $budget,
+                $freelancerId,
+                $partialOverdue,
+                &$amount,
+                &$refundToCustomer
+            ) {
                 $escrow = Payment::where('project_id', $project->id)
+                    ->where('type', 'transfer')
                     ->where('status', 'frozen')
                     ->lockForUpdate()
                     ->first();
 
                 if ($escrow) {
-                    if (abs((float) $escrow->amount - $amount) > 0.009) {
-                        throw new \RuntimeException('Сумма эскроу не совпадает с бюджетом проекта');
+                    // Средства уже списаны с баланса заказчика при создании заказа — повторно не списываем
+                    $escrowTotal = (float) $escrow->amount;
+
+                    if ($partialOverdue) {
+                        $amount = round($escrowTotal * 0.75, 2);
+                        $refundToCustomer = round($escrowTotal - $amount, 2);
+                    } else {
+                        $amount = $escrowTotal;
+                        $refundToCustomer = 0.0;
                     }
 
+                    $customer = User::where('id', $user->id)->lockForUpdate()->firstOrFail();
                     $freelancer = User::where('id', $freelancerId)->lockForUpdate()->firstOrFail();
 
                     $escrow->freelancer_id = $freelancer->id;
+                    $escrow->amount = $amount;
                     $escrow->status = 'paid';
                     $escrow->save();
 
                     $freelancer->balance = (float) $freelancer->balance + $amount;
                     $freelancer->save();
 
+                    if ($refundToCustomer > 0) {
+                        $customer->balance = (float) $customer->balance + $refundToCustomer;
+                        $customer->save();
+                    }
+
                     return;
                 }
 
-                // Старые проекты без эскроу: списание с баланса заказчика при оплате
+                $hasProjectTransfer = Payment::where('project_id', $project->id)
+                    ->where('type', 'transfer')
+                    ->exists();
+
+                if ($hasProjectTransfer) {
+                    throw new \RuntimeException(
+                        'Зарезервированные средства недоступны. Обновите страницу или обратитесь в поддержку.'
+                    );
+                }
+
+                if ($partialOverdue) {
+                    throw new \RuntimeException(
+                        'Оплата 75% доступна только для заказов с резервом средств при создании.'
+                    );
+                }
+
+                // Старые проекты без эскроу: единственное списание — при оплате
+                $amount = $budget;
+                $refundToCustomer = 0.0;
+
                 $customer = User::where('id', $user->id)->lockForUpdate()->firstOrFail();
                 if ((float) $customer->balance < $amount) {
                     throw new \RuntimeException('Недостаточно средств для оплаты проекта');
@@ -415,10 +472,25 @@ class ProjectController extends Controller
             ], 500);
         }
 
+        $message = $partialOverdue
+            ? 'Оплачено 75% бюджета. Оставшиеся 25% возвращены на ваш баланс.'
+            : 'Оплата проекта выполнена успешно';
+
         return response()->json([
             'success' => true,
-            'message' => 'Оплата проекта выполнена успешно',
+            'message' => $message,
+            'paid_amount' => $amount,
+            'partial_overdue' => $partialOverdue,
         ]);
+    }
+
+    private function isProjectOverdue(Project $project): bool
+    {
+        if (!$project->deadline) {
+            return false;
+        }
+
+        return Carbon::parse($project->deadline)->startOfDay()->lt(now()->startOfDay());
     }
 
     private function refundEscrowAndDeleteProject(Project $project)

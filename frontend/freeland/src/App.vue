@@ -8,25 +8,65 @@
 html,
 body,
 #app {
-  min-height: 100%;
+  height: 100%;
   margin: 0;
+  padding: 0;
 }
 
+/* Главный wrapper */
 .page-flex-wrapper {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
+/* Страница внутри router-view */
 .page-flex-wrapper > * {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 100%;
 }
 
-.footer {
-  margin-top: auto !important;
+/* Основной контент */
+main,
+.page-content,
+.page-container {
+  flex: 1;
+  width: 100%;
+  padding-bottom: 40px; /* расстояние до футера */
+  box-sizing: border-box;
 }
+
+/* Футер */
+.footer {
+  margin-top: auto;
+  flex-shrink: 0;
+
+  padding-top: 24px;
+  padding-bottom: 24px;
+
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Чтобы секции не липли */
+section:last-child,
+.card:last-child,
+.project-card:last-child {
+  margin-bottom: 24px;
+}
+
+/* ---------------- DESKTOP ---------------- */
+
+.container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ---------------- TABLET ---------------- */
 
 @media (max-width: 1200px) {
   .container {
@@ -35,6 +75,8 @@ body,
     padding-right: 16px !important;
   }
 }
+
+/* ---------------- MOBILE ---------------- */
 
 @media (max-width: 768px) {
   .container {
@@ -70,8 +112,16 @@ body,
   .modal-actions,
   .balance-actions {
     flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer {
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 }
+
+/* ---------------- SMALL MOBILE ---------------- */
 
 @media (max-width: 480px) {
   .nav-button,
@@ -79,6 +129,10 @@ body,
   .submit-button,
   .modal-button {
     width: 100%;
+  }
+
+  .footer {
+    text-align: center;
   }
 }
 </style>

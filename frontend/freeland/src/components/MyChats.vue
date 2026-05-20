@@ -408,8 +408,29 @@ export default {
 </script>
 
 <style scoped>
-.my-chats-page { min-height: 100vh; position: relative; padding: 40px 0 80px; }
-.container { max-width: 1520px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 20; width: 100%; }
+.my-chats-page {
+  min-height: 100vh;
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+
+  padding-top: 40px;
+}
+.container {
+  flex: 1 0 auto;
+
+  max-width: 1520px;
+  margin: 0 auto;
+  padding: 0 24px 64px;
+
+  position: relative;
+  z-index: 20;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+}
 .page-header { padding: 24px; margin-bottom: 20px; text-align: center; }
 .page-title { color: #fff; margin: 0; }
 .page-subtitle { color: #f0f8ff; opacity: 0.85; margin-top: 8px; }
@@ -448,6 +469,11 @@ export default {
   z-index: 1;
   overflow: hidden;
   pointer-events: none;
+}
+
+:deep(footer) {
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .gradient-sphere {
