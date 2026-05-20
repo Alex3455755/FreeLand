@@ -896,9 +896,7 @@ export default {
   flex-direction: column;
 
   position: relative;
-
-  padding-top: 40px;
-  padding-bottom: 64px;
+    padding-bottom: 0; 
 }
 
 :deep(footer),
