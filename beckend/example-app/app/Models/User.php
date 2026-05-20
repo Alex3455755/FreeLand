@@ -18,6 +18,7 @@ class User extends Authenticatable
         'avatar',
         'password',
         'email_verification_code',
+        'password_reset_code',
         'email_verified_at',
         'role',
         'balance',

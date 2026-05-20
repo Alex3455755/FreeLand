@@ -349,7 +349,7 @@ export default {
   flex-direction: column;
   position: relative;
   padding: 40px 0 80px;
-  padding-bottom: 0; 
+  padding-bottom: 64px; 
 }
 .container {
   flex: 1 0 auto;          /* ← ключевой момент */

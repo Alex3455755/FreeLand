@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use PHPMailer\PHPMailer\PHPMailer;
+use App\Models\Project;
 use App\Models\User;
 
 class ApplicationController extends Controller
@@ -23,11 +24,23 @@ class ApplicationController extends Controller
     /**
      * Все заявки пользователя
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Application::with(['user', 'project'])
-            ->latest()
-            ->get();
+        $user = $request->user();
+
+        $query = Application::with(['user', 'project'])->latest();
+
+        if ($user) {
+            if (in_array($user->role, ['freelancer', 'фрилансер'], true)) {
+                $query->where('user_id', $user->id);
+            } elseif (in_array($user->role, ['customer', 'заказчик'], true)) {
+                $query->whereHas('project', function ($q) use ($user) {
+                    $q->where('customer_id', $user->id);
+                });
+            }
+        }
+
+        return $query->get();
     }
 
     /**
@@ -40,26 +53,66 @@ class ApplicationController extends Controller
         ]);
 
         $user = $request->user();
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Необходима авторизация',
+            ], 401);
+        }
 
-        $userId = $user->id;
+        if (!in_array($user->role, ['freelancer', 'фрилансер'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Откликаться могут только фрилансеры',
+            ], 403);
+        }
 
-        $existing = Application::where('user_id', $userId)
+        $project = Project::findOrFail($request->project_id);
+
+        if ($project->status !== 'open') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Проект не принимает отклики',
+            ], 422);
+        }
+
+        $assignedFreelancerId = $project->freelancer_id ?? $project->getAttribute('frelancer_id');
+        if ($assignedFreelancerId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У проекта уже назначен исполнитель',
+            ], 422);
+        }
+
+        if ((int) $project->customer_id === (int) $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Нельзя откликаться на собственный проект',
+            ], 422);
+        }
+
+        $existing = Application::where('user_id', $user->id)
             ->where('project_id', $request->project_id)
             ->first();
 
         if ($existing) {
             return response()->json([
-                'message' => 'Application already exists'
+                'success' => false,
+                'message' => 'Вы уже отправляли заявку на этот проект',
             ], 409);
         }
 
         $application = Application::create([
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'project_id' => $request->project_id,
             'status' => Application::STATUS_PENDING,
         ]);
 
-        return response()->json($application, 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Заявка отправлена',
+            'application' => $application->load(['user', 'project']),
+        ], 201);
     }
 
     /**

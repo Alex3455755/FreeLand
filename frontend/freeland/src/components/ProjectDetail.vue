@@ -177,7 +177,7 @@
             </div>
           </div>
 
-          <div v-if="user && user.role === 'freelancer' && myApplication" class="application-status ios-glass">
+          <div v-if="user && isFreelancerRole(user.role) && myApplication" class="application-status ios-glass">
             <h3>Статус вашей заявки</h3>
 
             <div class="status-badge" :class="myApplication.status">
@@ -202,7 +202,7 @@
             <button 
               @click="respondToProject" 
               class="respond-button ios-glass"
-              :disabled="responding || project.freelancer_id || project.status !== 'open'"
+              :disabled="responding || project.freelancer_id || project.frelancer_id || project.status !== 'open'"
             >
               <span v-if="responding" class="button-spinner"></span>
               <span class="button-text">
@@ -247,6 +247,8 @@
 </template>
 
 <script>
+import { isFreelancerRole } from '@/utils/roles'
+
 export default {
   name: 'ProjectDetail',
   
@@ -303,13 +305,14 @@ export default {
     
     // Проверка, может ли пользователь откликнуться
     canRespond() {
+      const assignedId = this.project?.freelancer_id || this.project?.frelancer_id
       return (
         this.user &&
-        this.user.role === 'freelancer' &&
+        isFreelancerRole(this.user.role) &&
         this.project &&
         this.project.status === 'open' &&
-        !this.project.freelancer_id &&
-        !this.myApplication // 👈 ключевая проверка
+        !assignedId &&
+        !this.myApplication
       );
     },
     
@@ -329,6 +332,8 @@ export default {
   },
   
   methods: {
+    isFreelancerRole,
+
     // Получение текущего пользователя
     async fetchCurrentUser() {
       this.userLoading = true;
@@ -352,6 +357,9 @@ export default {
         
         if (response.ok && data.success) {
           this.user = data.user;
+          if (this.project && isFreelancerRole(this.user.role)) {
+            await this.fetchMyApplication();
+          }
         } else {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
@@ -365,36 +373,34 @@ export default {
       }
     },
     async fetchMyApplication() {
-  if (!this.user || this.user.role !== 'freelancer') return;
+      if (!this.user || !isFreelancerRole(this.user.role) || !this.project) return;
 
-  this.applicationLoading = true;
+      this.applicationLoading = true;
+      const token = localStorage.getItem('token');
 
-  const token = localStorage.getItem('token');
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        });
 
-  try {
-    const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${token}`
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.applications || []);
+
+        if (response.ok) {
+          this.myApplication = list.find(app =>
+            Number(app.project_id) === Number(this.project.id) &&
+            Number(app.user_id) === Number(this.user.id)
+          ) || null;
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки заявки:', error);
+      } finally {
+        this.applicationLoading = false;
       }
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      // ищем заявку именно на этот проект
-      this.myApplication = data.find(app =>
-        app.project_id === this.project.id &&
-        app.user_id === this.user.id
-      ) || null;
-    }
-
-  } catch (error) {
-    console.error('Ошибка загрузки заявки:', error);
-  } finally {
-    this.applicationLoading = false;
-  }
-},
+    },
     
     async fetchProject() {
       try {
@@ -420,7 +426,7 @@ export default {
         if (this.project.customer_id) {
           await this.fetchCustomer(this.project.customer_id);
         }
-                if (this.user) {
+                if (this.user && isFreelancerRole(this.user.role)) {
           await this.fetchMyApplication();
         }
         
@@ -645,49 +651,55 @@ export default {
     
     // Метод для отклика на проект
     async respondToProject() {
-  if (!this.user || this.user.role !== 'freelancer') {
-    this.showMessage('Только фрилансеры могут откликаться на проекты', 'error');
-    return;
-  }
+      if (!this.user || !isFreelancerRole(this.user.role)) {
+        this.showMessage('Только фрилансеры могут откликаться на проекты', 'error');
+        return;
+      }
 
-  this.responding = true;
-  this.respondMessage = '';
+      this.responding = true;
+      this.respondMessage = '';
 
-  const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token');
 
-  if (!token) {
-    this.showMessage('Необходимо авторизоваться', 'error');
-    this.responding = false;
-    return;
-  }
+      if (!token) {
+        this.showMessage('Необходимо авторизоваться', 'error');
+        this.responding = false;
+        return;
+      }
 
-  try {
-    const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        project_id: this.project.id
-      })
-    });
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/applications`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            project_id: this.project.id
+          })
+        });
 
-    const result = await response.json();
+        const result = await response.json();
 
-    if (response.ok) {
-      this.showMessage('Заявка успешно отправлена!', 'success');
-    } else {
-      throw new Error(result.message || 'Ошибка при отправке заявки');
-    }
-
-  } catch (error) {
-    console.error('Ошибка заявки:', error);
-    this.showMessage(error.message || 'Ошибка при отправке заявки', 'error');
-  } finally {
-    this.responding = false;
-  }
-},
+        if (response.ok && (result.success !== false)) {
+          this.myApplication = result.application || {
+            project_id: this.project.id,
+            user_id: this.user.id,
+            status: 'pending'
+          };
+          this.showMessage(result.message || 'Заявка успешно отправлена!', 'success');
+          await this.fetchMyApplication();
+        } else {
+          throw new Error(result.message || 'Ошибка при отправке заявки');
+        }
+      } catch (error) {
+        console.error('Ошибка заявки:', error);
+        this.showMessage(error.message || 'Ошибка при отправке заявки', 'error');
+      } finally {
+        this.responding = false;
+      }
+    },
     
     showMessage(message, type = 'info') {
       this.respondMessage = message;

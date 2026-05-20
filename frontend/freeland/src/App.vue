@@ -28,6 +28,26 @@ body,
   margin-top: auto !important;
 }
 
+/* Отступ контента от футера на страницах с общим layout */
+.my-projects-page,
+.projects-page,
+.profile-page,
+.admin-page,
+.freelancers-page,
+.project-detail-page,
+.my-chats-page,
+.team-page,
+.easy-projects-page,
+.home-page,
+.user-detail-page,
+.not-found-page {
+  padding-bottom: 64px !important;
+}
+
+.page-flex-wrapper .container {
+  margin-bottom: 24px;
+}
+
 @media (max-width: 1200px) {
   .container {
     max-width: 100%;

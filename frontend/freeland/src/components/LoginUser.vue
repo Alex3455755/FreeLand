@@ -3,8 +3,69 @@
     <div class="modal-content login-card ios-glass ios-glass-heavy">
       <h2 class="login-title">Вход в аккаунт</h2>
       
+      <!-- Вход по коду из письма -->
+      <div v-if="recoveryMode" class="recovery-box">
+        <h3 class="recovery-title">Вход по коду из email</h3>
+        <p v-if="recoveryStep === 'code'" class="recovery-hint">
+          Код отправлен на <strong>{{ recoveryLogin }}</strong>
+        </p>
+
+        <div v-if="recoveryStep === 'email'" class="form-group">
+          <label for="recovery-email" class="form-label">Email</label>
+          <input
+            id="recovery-email"
+            v-model="recoveryLogin"
+            type="email"
+            class="form-input ios-glass"
+            placeholder="name@example.com"
+          />
+        </div>
+
+        <div v-if="recoveryStep === 'code'" class="form-group">
+          <label for="recovery-code" class="form-label">Код из письма</label>
+          <input
+            id="recovery-code"
+            v-model="recoveryCode"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="8"
+            class="form-input ios-glass recovery-code-input"
+            placeholder="000000"
+          />
+        </div>
+
+        <div v-if="authError" class="alert alert-error">{{ authError }}</div>
+
+        <button
+          type="button"
+          class="login-button ios-glass ios-glass-heavy"
+          :disabled="isLoading"
+          @click="recoveryStep === 'email' ? sendRecoveryCode() : loginWithRecoveryCode()"
+        >
+          <span v-if="!isLoading">
+            {{ recoveryStep === 'email' ? 'Отправить код' : 'Войти по коду' }}
+          </span>
+          <span v-else class="loader"></span>
+        </button>
+
+        <button
+          v-if="recoveryStep === 'code'"
+          type="button"
+          class="recovery-link-btn"
+          :disabled="isLoading"
+          @click="sendRecoveryCode"
+        >
+          Отправить код повторно
+        </button>
+
+        <button type="button" class="recovery-link-btn" @click="exitRecoveryMode">
+          Вернуться к входу по паролю
+        </button>
+      </div>
+
       <!-- Форма авторизации -->
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form v-else @submit.prevent="handleLogin" class="login-form">
         <!-- Поле логина -->
         <div class="form-group">
           <label for="login" class="form-label">Email</label>
@@ -62,6 +123,10 @@
           {{ authError }}
         </div>
 
+        <button type="button" class="forgot-password-link" @click="enterRecoveryMode">
+          Забыли пароль? Войти по коду из email
+        </button>
+
         <!-- Кнопка входа -->
         <button 
           type="submit" 
@@ -102,6 +167,10 @@ const form = reactive({
 const showPassword = ref(false)
 const isLoading = ref(false)
 const authError = ref('')
+const recoveryMode = ref(false)
+const recoveryStep = ref('email')
+const recoveryLogin = ref('')
+const recoveryCode = ref('')
 
 const errors = reactive({
   login: '',
@@ -135,6 +204,102 @@ const validateField = (field) => {
 const isFormValid = computed(() => {
   return form.login && form.password && !errors.login && !errors.password
 })
+
+const enterRecoveryMode = () => {
+  recoveryMode.value = true
+  recoveryStep.value = 'email'
+  recoveryLogin.value = form.login.trim()
+  recoveryCode.value = ''
+  authError.value = ''
+}
+
+const exitRecoveryMode = () => {
+  recoveryMode.value = false
+  recoveryStep.value = 'email'
+  recoveryCode.value = ''
+  authError.value = ''
+}
+
+const sendRecoveryCode = async () => {
+  const login = recoveryLogin.value.trim()
+  if (!login) {
+    authError.value = 'Введите email'
+    return
+  }
+
+  isLoading.value = true
+  authError.value = ''
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/forgot-password/send-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ login })
+    })
+
+    const data = await response.json()
+
+    if (response.ok && data.success) {
+      recoveryStep.value = 'code'
+      recoveryLogin.value = data.login || login
+      authError.value = ''
+    } else {
+      authError.value = data.message || 'Не удалось отправить код'
+    }
+  } catch (error) {
+    authError.value = `Ошибка: ${error.message}`
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loginWithRecoveryCode = async () => {
+  const login = recoveryLogin.value.trim()
+  const digits = recoveryCode.value.replace(/\D/g, '')
+
+  if (!login) {
+    authError.value = 'Введите email'
+    return
+  }
+  if (digits.length !== 6) {
+    authError.value = 'Введите 6-значный код'
+    return
+  }
+
+  isLoading.value = true
+  authError.value = ''
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/forgot-password/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ login, code: digits })
+    })
+
+    const data = await response.json()
+
+    if (response.ok && data.success) {
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('user', JSON.stringify(data.user))
+      const redirectPath = route.query.redirect || '/'
+      await router.push(redirectPath)
+    } else {
+      authError.value = data.message || 'Неверный код'
+    }
+  } catch (error) {
+    authError.value = `Ошибка: ${error.message}`
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const handleLogin = async () => {
   validateField('login')
@@ -397,6 +562,67 @@ if (savedLogin) {
   background: rgba(10, 77, 140, 0.5);
   border-color: rgba(168, 209, 255, 0.4);
   transform: translateY(-1px);
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #a8d1ff;
+  font-size: 0.92rem;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.forgot-password-link:hover {
+  color: #ffffff;
+}
+
+.recovery-box {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.recovery-title {
+  color: #ffffff;
+  font-size: 1.25rem;
+  text-align: center;
+  margin: 0;
+}
+
+.recovery-hint {
+  color: #f0f8ff;
+  font-size: 0.95rem;
+  text-align: center;
+  margin: 0;
+}
+
+.recovery-code-input {
+  letter-spacing: 0.35em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.recovery-link-btn {
+  background: none;
+  border: none;
+  color: #a8d1ff;
+  cursor: pointer;
+  font-size: 0.92rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.recovery-link-btn:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.recovery-link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 480px) {

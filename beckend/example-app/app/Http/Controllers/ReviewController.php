@@ -172,7 +172,7 @@ class ReviewController extends Controller // Исправлено: RewiewControl
                 ], 403);
             }
 
-            $reviews = Review::where('status', 'pending') // Исправлено: Rewiew -> Review
+            $reviews = Review::where('status', 'pending')
                             ->orderBy('created_at', 'desc')
                             ->get();
 

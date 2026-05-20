@@ -232,10 +232,10 @@
 
           <div class="payments-lists">
             <div class="payments-section ios-glass">
-              <h4>📤 Исходящие платежи</h4>
+              <h4>Исходящие платежи</h4>
               <div v-if="sentPayments.length > 0" class="payments-list">
                 <div v-for="payment in sentPayments" :key="payment.id" class="payment-item">
-                  <div class="payment-icon">📤</div>
+                  <div class="payment-icon"></div>
                   <div class="payment-details">
                     <div class="payment-header">
                       <span class="payment-recipient">{{ payment.freelancer?.full_name || payment.freelancer?.login }}</span>
@@ -255,10 +255,10 @@
             </div>
 
             <div class="payments-section ios-glass">
-              <h4>📥 Входящие платежи</h4>
+              <h4>Входящие платежи</h4>
               <div v-if="receivedPayments.length > 0" class="payments-list">
                 <div v-for="payment in receivedPayments" :key="payment.id" class="payment-item">
-                  <div class="payment-icon">📥</div>
+                  <div class="payment-icon"></div>
                   <div class="payment-details">
                     <div class="payment-header">
                       <span class="payment-sender">{{ payment.customer?.full_name || payment.customer?.login }}</span>
@@ -894,7 +894,7 @@ export default {
   min-height: 100vh;
   padding: 40px 0 80px;
   position: relative;
-    padding-bottom: 0; 
+    padding-bottom: 64px;
 }
 
 .container {
