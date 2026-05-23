@@ -473,61 +473,61 @@
       class="modal-overlay"
       @click.self="closeEditModal"
     >
-      <div class="modal-content ios-glass project-edit-modal">
+      <div class="modal-content ios-glass">
         <div class="modal-header">
           <h3 class="modal-title">Редактировать проект</h3>
           <button type="button" class="modal-close" @click="closeEditModal">✕</button>
         </div>
 
         <div class="modal-body">
-        <form class="modal-form" @submit.prevent="saveProjectEdit">
-          <div class="form-group">
-            <label>Название</label>
-            <input v-model="editingProject.title" type="text" class="form-input ios-glass" required />
-          </div>
+          <form @submit.prevent="saveProjectEdit">
+            <div class="form-group">
+              <label>Название</label>
+              <input v-model="editingProject.title" type="text" class="form-input ios-glass" required>
+            </div>
 
-          <div class="form-group">
-            <label>Описание</label>
-            <textarea v-model="editingProject.description" class="form-input ios-glass" rows="3" />
-          </div>
+            <div class="form-group">
+              <label>Описание</label>
+              <textarea v-model="editingProject.description" class="form-input ios-glass" rows="3"></textarea>
+            </div>
 
-          <div class="form-group">
-            <label>Бюджет</label>
-            <input v-model.number="editingProject.budget" type="number" min="0" class="form-input ios-glass" />
-          </div>
+            <div class="form-group">
+              <label>Бюджет</label>
+              <input v-model.number="editingProject.budget" type="number" min="0" class="form-input ios-glass">
+            </div>
 
-          <div class="form-group">
-            <label>Дедлайн</label>
-            <input v-model="editingProject.deadline" type="date" class="form-input ios-glass" :min="today" />
-          </div>
+            <div class="form-group">
+              <label>Дедлайн</label>
+              <input v-model="editingProject.deadline" type="date" class="form-input ios-glass" :min="today">
+            </div>
 
-          <div class="form-group">
-            <label>Категория</label>
-            <select v-model="editingProject.category_id" class="form-input ios-glass">
-              <option value="">Выберите категорию</option>
-              <option
-                v-for="category in categories"
-                :key="category.id"
-                :value="category.id"
-              >
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
+            <div class="form-group">
+              <label>Категория</label>
+              <select v-model="editingProject.category_id" class="form-input ios-glass">
+                <option value="">Выберите категорию</option>
+                <option
+                  v-for="category in categories"
+                  :key="category.id"
+                  :value="category.id"
+                >
+                  {{ category.name }}
+                </option>
+              </select>
+            </div>
 
-          <p class="edit-hint">
-            Сумма заказа уже зарезервирована при создании. При оплате 75% средства берутся из резерва: часть — исполнителю, остаток — на ваш баланс.
-          </p>
+            <p class="edit-hint">
+              Сумма заказа уже зарезервирована при создании. При оплате 75% средства берутся из резерва: часть — исполнителю, остаток — на ваш баланс.
+            </p>
 
-          <div class="modal-actions">
-            <button type="button" class="cancel-button ios-glass" @click="closeEditModal">
-              Отмена
-            </button>
-            <button type="submit" class="save-button ios-glass" :disabled="projectUpdating">
-              {{ projectUpdating ? 'Сохранение…' : 'Сохранить' }}
-            </button>
-          </div>
-        </form>
+            <div class="modal-actions">
+              <button type="button" class="cancel-button" @click="closeEditModal">
+                Отмена
+              </button>
+              <button type="submit" class="save-button" :disabled="projectUpdating">
+                {{ projectUpdating ? 'Сохранение…' : 'Сохранить' }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -2227,17 +2227,12 @@ export default {
   cursor: not-allowed;
 }
 
-.modal-container {
-  max-width: 560px;
-  width: 100%;
-  max-height: 90vh;
+.modal-content {
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
   overflow-y: auto;
-  padding: 44px 34px;
-  border: 1px solid rgba(168, 209, 255, 0.24);
-  border-radius: 32px;
-  background: rgba(10, 77, 140, 0.15);
-  backdrop-filter: blur(25px) saturate(180%);
-  box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
+  background: rgba(10, 77, 140, 0.3);
   animation: modalFadeIn 0.3s ease;
 }
 
@@ -2245,137 +2240,130 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  padding: 20px 30px;
+  border-bottom: 1px solid rgba(168, 209, 255, 0.1);
 }
 
 .modal-title {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 600;
   color: #FFFFFF;
-  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+  margin: 0;
 }
 
 .modal-close {
-  font-size: 2.5rem;
-  background: none;
-  border: none;
-  color: rgba(168, 209, 255, 0.5);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 1.2rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-close:hover {
-  color: #FFFFFF;
-  transform: scale(1.1);
+  background: rgba(231, 76, 60, 0.3);
+  border-color: rgba(231, 76, 60, 0.4);
+  transform: rotate(90deg);
 }
 
-.modal-form {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.modal-body {
+  padding: 30px;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .form-group label {
-  color: #F0F8FF;
-  font-size: 1rem;
-  font-weight: 500;
-  margin-left: 5px;
-}
-
-.required {
-  color: #e74c3c;
-  margin-left: 4px;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+  display: block;
+  margin-bottom: 8px;
+  color: #A8D1FF;
+  font-size: 0.95rem;
 }
 
 .form-input {
-  padding: 15px 20px;
+  width: 100%;
+  padding: 12px 16px;
   background: rgba(10, 77, 140, 0.2);
   border: 1px solid rgba(168, 209, 255, 0.2);
-  border-radius: 16px;
+  border-radius: 12px;
   color: #FFFFFF;
   font-size: 1rem;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .form-input:focus {
   outline: none;
   border-color: rgba(168, 209, 255, 0.4);
-  background: rgba(10, 77, 140, 0.3);
-  box-shadow: 0 0 20px rgba(168, 209, 255, 0.1);
+  background: rgba(10, 77, 140, 0.25);
+}
+
+.form-input::placeholder {
+  color: rgba(168, 209, 255, 0.4);
+}
+
+textarea.form-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.edit-hint {
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(52, 152, 219, 0.12);
+  border: 1px solid rgba(52, 152, 219, 0.25);
+  color: #d9ecff;
+  font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .modal-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(168, 209, 255, 0.1);
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  justify-content: flex-end;
 }
 
-.modal-button {
-  width: 100%;
-  padding: 15px 18px;
+.cancel-button,
+.save-button {
+  padding: 12px 30px;
   border-radius: 9999px;
   font-size: 1rem;
-  font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   border: 1px solid rgba(168, 209, 255, 0.3);
 }
 
-.modal-button.cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #F0F8FF;
-  border: 1px solid rgba(168, 209, 255, 0.2);
+.cancel-button {
+  background: rgba(149, 165, 166, 0.2);
+  color: #95a5a6;
 }
 
-.modal-button.cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.modal-button.submit {
-  background: rgba(10, 77, 140, 0.45);
-  color: #FFFFFF;
-  position: relative;
-  overflow: hidden;
-}
-
-.modal-button.submit:hover:not(:disabled) {
-  background: rgba(10, 77, 140, 0.62);
+.cancel-button:hover {
+  background: rgba(149, 165, 166, 0.3);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(10, 77, 140, 0.4);
 }
 
-.modal-button.submit::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -120%;
-  width: 220%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(168, 209, 255, 0.35), transparent);
-  transition: 0.8s;
+.save-button {
+  background: linear-gradient(135deg, #0A4D8C, #1A6BB3);
+  color: #FFFFFF;
 }
 
-.modal-button.submit:hover::before {
-  left: 100%;
+.save-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1A6BB3, #2A7FC9);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(8, 51, 88, 0.4);
 }
 
-.modal-button.submit:disabled {
+.save-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -2449,8 +2437,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
