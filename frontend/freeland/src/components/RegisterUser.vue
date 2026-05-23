@@ -45,7 +45,7 @@
           <a
             href="/api/user-agreement"
             class="agreement-download"
-            download="user-agreement-freeland.txt"
+            download="user-agreement-freeland.pdf"
             target="_blank"
             rel="noopener noreferrer"
           >
