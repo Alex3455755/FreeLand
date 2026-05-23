@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\EncryptedText;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,7 @@ class Message extends Model
     protected $casts = [
         'time' => 'datetime',
         'read_at' => 'datetime',
+        'text' => EncryptedText::class,
     ];
 
     protected $hidden = [

@@ -446,9 +446,9 @@ export default {
 .chat-partner { opacity: 0.8; font-size: 0.9rem; margin-top: 2px; }
 .chat-head { border-bottom: 1px solid rgba(168,209,255,0.2); padding-bottom: 12px; margin-bottom: 12px; color: #fff; }
 .chat-head h3 { margin: 0 0 4px; }
-.messages { min-height: 420px; height: auto; max-height: none; flex: 1; overflow-y: auto; padding-right: 8px; }
-.message { display: inline-block; max-width: 80%; margin: 6px 0; padding: 10px 12px; border-radius: 14px; background: rgba(10,77,140,0.3); color: #fff; }
-.message.mine { background: rgba(52,152,219,0.45); margin-left: auto; display: block; }
+.messages { min-height: 420px; height: auto; max-height: none; flex: 1; overflow-y: auto; padding-right: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 0; }
+.message { display: block; max-width: 80%; margin: 6px 0; padding: 10px 12px; border-radius: 14px; background: rgba(10,77,140,0.3); color: #fff; }
+.message.mine { background: rgba(52,152,219,0.45); align-self: flex-end; }
 .message-text { white-space: pre-wrap; word-break: break-word; }
 .message-file-link { display: inline-block; margin-top: 6px; color: #a8d1ff; text-decoration: underline; font-size: 0.95rem; }
 .message-image-wrap { display: block; margin-top: 8px; max-width: 260px; }
