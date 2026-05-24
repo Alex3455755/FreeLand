@@ -1,6 +1,11 @@
 <!-- resources/js/components/Profile.vue -->
 <template>
   <div class="profile-page">
+    <SEOHead
+      title="Мой профиль — FreeLand"
+      description="Личный кабинет пользователя FreeLand: управление профилем, баланс и настройки аккаунта."
+      :noindex="true"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -152,11 +157,13 @@
             
             <div class="form-group">
               <label>Телефон</label>
-              <input 
-                v-model="editForm.phone" 
-                type="text" 
+              <input
+                v-model="editForm.phone"
+                type="tel"
+                inputmode="tel"
+                maxlength="18"
                 class="form-input ios-glass"
-                placeholder="Введите номер телефона"
+                placeholder="+7XXXXXXXXXX или 8XXXXXXXXXX"
               />
             </div>
             
@@ -377,14 +384,16 @@
 <script>
 import FooterApp from '@/elements/FooterApp.vue'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
+import SEOHead from '@/elements/SEOHead.vue'
 import { avatarSrc } from '@/utils/avatar'
 
 export default {
   name: 'ProfilePage',
-  
+
   components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
   
   data() {
@@ -627,12 +636,15 @@ export default {
         return
       }
 
-      if (phone && !/^\+?[0-9\s\-()]{7,20}$/.test(phone)) {
-        this.updateMessage = 'Введите корректный номер телефона'
+      // Нормализация и проверка российского формата: +7XXXXXXXXXX или 8XXXXXXXXXX
+      const normalizedPhone = phone.replace(/[\s\-()]/g, '')
+      if (phone && !/^(\+7|8)\d{10}$/.test(normalizedPhone)) {
+        this.updateMessage = 'Телефон должен быть в формате +7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)'
         this.updateMessageType = 'error'
         this.updating = false
         return
       }
+      this.editForm.phone = normalizedPhone
 
       if (password && password.length < 6) {
         this.updateMessage = 'Новый пароль должен быть не короче 6 символов'

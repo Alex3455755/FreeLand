@@ -1,5 +1,11 @@
 <template>
   <div class="home-page">
+    <SEOHead
+      title="FreeLand — биржа фриланса: поиск исполнителей и заказов"
+      description="FreeLand — платформа для фрилансеров и заказчиков. Публикуйте проекты, находите проверенных специалистов и проводите безопасные сделки через эскроу."
+      keywords="фриланс, биржа фриланса, найти фрилансера, заказы для фрилансеров, удалённая работа"
+      :canonical="canonicalUrl"
+    />
     <!-- Усиленный динамический фон с частицами в синих тонах -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -111,11 +117,15 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
 import FooterApp from '@/elements/FooterApp.vue'
+import SEOHead from '@/elements/SEOHead.vue'
 import { avatarSrc } from '@/utils/avatar'
 import '../assets/css/mainStyle.css'
 
 const router = useRouter()
 const API_URL = ''
+
+// Canonical-ссылка для SEO
+const canonicalUrl = computed(() => (typeof window !== 'undefined' ? window.location.origin : '') + '/')
 
 // Состояние пользователя
 const user = ref(null)

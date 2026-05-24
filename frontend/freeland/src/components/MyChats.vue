@@ -1,5 +1,10 @@
 <template>
   <div class="my-chats-page">
+    <SEOHead
+      title="Мои чаты — FreeLand"
+      description="Личная переписка с заказчиками и исполнителями на FreeLand. Сообщения защищены и доступны только участникам диалога."
+      :noindex="true"
+    />
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
       <div class="gradient-sphere sphere-2"></div>
@@ -118,10 +123,11 @@
 <script>
 import HeaderMenu from '@/elements/HeaderMenu.vue'
 import FooterApp from '@/elements/FooterApp.vue'
+import SEOHead from '@/elements/SEOHead.vue'
 
 export default {
   name: 'MyChats',
-  components: { HeaderMenu, FooterApp },
+  components: { HeaderMenu, FooterApp, SEOHead },
   data() {
     return {
       apiBaseUrl: '',

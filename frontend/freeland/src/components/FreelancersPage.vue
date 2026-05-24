@@ -1,6 +1,14 @@
 <!-- resources/js/components/FreelancersPage.vue -->
 <template>
   <div class="freelancers-page">
+    <SEOHead
+      :title="seoData.title"
+      :description="seoData.description"
+      :keywords="seoData.keywords"
+      :og-title="seoData.title"
+      :og-description="seoData.description"
+      :canonical="seoData.canonical"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -129,18 +137,26 @@
 import _ from 'lodash';
 import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 import { avatarSrc } from '@/utils/avatar';
 
 export default {
   name: 'FreelancersPage',
-  
+
   components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
-  
+
   data() {
     return {
+      seoData: {
+        title: 'Каталог фрилансеров и специалистов — FreeLand',
+        description: 'Найдите проверенных фрилансеров на FreeLand: разработчики, дизайнеры, копирайтеры и другие специалисты. Просматривайте портфолио, рейтинги и отзывы.',
+        keywords: 'фрилансеры, найти специалиста, исполнители, портфолио, рейтинг фрилансеров',
+        canonical: (typeof window !== 'undefined' ? window.location.origin : '') + '/freelancer'
+      },
       allUsers: [], // Все пользователи
       categories: [],
       loading: true,

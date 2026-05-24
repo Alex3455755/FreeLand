@@ -19,13 +19,15 @@ class RegisterController extends Controller
     {
         request()->validate([
             'full_name' => ['required', 'string', 'min:2', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:40'],
+            'phone' => ['required', 'string', 'regex:/^(\+7|8)\d{10}$/'],
             'login' => ['required', 'email', 'max:255', 'unique:users,login'],
             'password' => ['required', 'string', 'min:6', 'max:255'],
             'role' => ['required', 'string'],
             'agreed_to_terms' => ['accepted'],
         ], [
             'agreed_to_terms.accepted' => 'Необходимо принять пользовательское соглашение',
+            'phone.required' => 'Укажите номер телефона',
+            'phone.regex' => 'Телефон должен быть в формате +7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)',
         ]);
 
         $verificationCode = (string) random_int(100000, 999999);

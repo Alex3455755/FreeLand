@@ -70,9 +70,11 @@ class ProfileController extends Controller
             
             $validated = $request->validate([
                 'full_name' => 'sometimes|string|max:255',
-                'phone' => 'sometimes|string|max:20',
+                'phone' => ['sometimes', 'nullable', 'string', 'regex:/^(\+7|8)\d{10}$/'],
                 'avatar' => 'nullable|string|max:255',
                 'password' => 'sometimes|string|min:6|confirmed'
+            ], [
+                'phone.regex' => 'Телефон должен быть в формате +7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)',
             ]);
             
             if (isset($validated['password'])) {

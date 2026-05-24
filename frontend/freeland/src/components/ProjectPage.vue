@@ -1,6 +1,14 @@
 <!-- resources/js/components/ProjectsPage.vue -->
 <template>
   <div class="projects-page">
+    <SEOHead
+      :title="seoData.title"
+      :description="seoData.description"
+      :keywords="seoData.keywords"
+      :og-title="seoData.title"
+      :og-description="seoData.description"
+      :canonical="seoData.canonical"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -288,15 +296,23 @@
 import _ from 'lodash';
 import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 
 export default {
   name: 'ProjectsPage',
   components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
   data() {
     return {
+      seoData: {
+        title: 'Проекты и заказы для фрилансеров — биржа FreeLand',
+        description: 'Каталог актуальных проектов и заказов для фрилансеров: веб-разработка, дизайн, тексты и другое. Откликайтесь на задания и зарабатывайте на FreeLand.',
+        keywords: 'проекты для фрилансеров, заказы фриланс, найти работу фрилансеру, биржа заданий',
+        canonical: (typeof window !== 'undefined' ? window.location.origin : '') + '/projects'
+      },
       projects: [],
       categories: [],
       customers: {},

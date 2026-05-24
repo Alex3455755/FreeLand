@@ -1,6 +1,14 @@
 <!-- resources/js/components/ProjectDetail.vue -->
 <template>
   <div class="project-detail-page">
+    <SEOHead
+      :title="seoData.title"
+      :description="seoData.description"
+      :keywords="seoData.keywords"
+      :og-title="seoData.title"
+      :og-description="seoData.description"
+      :canonical="seoData.canonical"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -248,10 +256,15 @@
 
 <script>
 import { isFreelancerRole } from '@/utils/roles'
+import SEOHead from '@/elements/SEOHead.vue'
 
 export default {
   name: 'ProjectDetail',
-  
+
+  components: {
+    SEOHead
+  },
+
   data() {
     return {
       project: null,
@@ -287,6 +300,21 @@ export default {
   },
   
   computed: {
+    seoData() {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const title = this.project?.title
+        ? `${this.project.title} — проект на FreeLand`
+        : 'Детали проекта — FreeLand'
+      const baseDesc = this.project?.description
+        ? String(this.project.description).replace(/\s+/g, ' ').trim().slice(0, 160)
+        : 'Подробная информация о проекте на бирже FreeLand: описание, бюджет, сроки. Откликнитесь на заказ и начните работу.'
+      return {
+        title,
+        description: baseDesc,
+        keywords: 'проект фриланс, заказ, описание проекта, бюджет, отклик',
+        canonical: origin + (this.project?.id ? `/projects/${this.project.id}` : '/projects')
+      }
+    },
     // Проверка, является ли текущий пользователь автором проекта
     isAuthor() {
       return this.user && this.customer && this.user.id === this.customer.id;

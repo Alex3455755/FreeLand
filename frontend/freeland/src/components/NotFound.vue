@@ -1,5 +1,10 @@
 <template>
   <div class="not-found-page">
+    <SEOHead
+      title="Страница не найдена (404) — FreeLand"
+      description="Запрошенная страница не найдена. Вернитесь на главную FreeLand или воспользуйтесь поиском проектов."
+      :noindex="true"
+    />
     <header-menu />
     <!-- Динамический фон -->
     <div class="dynamic-background">
@@ -70,11 +75,13 @@
 <script>
 import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 export default {
   name: 'NotFound',
     components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
   
   data() {

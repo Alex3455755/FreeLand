@@ -107,7 +107,8 @@ const routes = [
     meta: {
       title: 'Админ панель - FreeLand',
       description: 'Панель управления платформой.',
-      keywords: 'админ, управление, модерация'
+      keywords: 'админ, управление, модерация',
+      noindex: true
     }
   },{
     path: '/my-projects',
@@ -115,7 +116,8 @@ const routes = [
     meta: {
       title: 'Мои проекты - FreeLand',
       description: 'Управление вашими проектами и заявками.',
-      keywords: 'мои проекты, заявки, управление'
+      keywords: 'мои проекты, заявки, управление',
+      noindex: true
     }
   },{
     path: '/my-chats',
@@ -123,7 +125,8 @@ const routes = [
     meta: {
       title: 'Мои чаты - FreeLand',
       description: 'Общение с заказчиками и исполнителями.',
-      keywords: 'чаты, сообщения, проект'
+      keywords: 'чаты, сообщения, проект',
+      noindex: true
     }
   },{
     path: '/profile',
@@ -131,7 +134,8 @@ const routes = [
     meta: {
       title: 'Мой профиль - FreeLand',
       description: 'Личный кабинет пользователя FreeLand.',
-      keywords: 'профиль, кабинет, баланс'
+      keywords: 'профиль, кабинет, баланс',
+      noindex: true
     }
   },{
     path: '/emploee',
@@ -158,7 +162,8 @@ const routes = [
     meta: {
       title: 'Страница не найдена - FreeLand',
       description: 'Запрошенная страница не найдена.',
-      keywords: '404, not found'
+      keywords: '404, not found',
+      noindex: true
     }
   }
 ]
@@ -186,7 +191,7 @@ router.afterEach((to) => {
   document.title = title
   setOrCreateMeta('description', description)
   setOrCreateMeta('keywords', keywords)
-  setOrCreateMeta('robots', 'index, follow')
+  setOrCreateMeta('robots', to.meta?.noindex ? 'noindex, nofollow' : 'index, follow')
 })
 
 export default router

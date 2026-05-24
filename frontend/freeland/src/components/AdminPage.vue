@@ -1,6 +1,11 @@
 <!-- resources/js/components/AdminPanel.vue -->
 <template>
   <div class="admin-panel">
+    <SEOHead
+      title="Панель администратора — FreeLand"
+      description="Панель управления платформой FreeLand."
+      :noindex="true"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -610,13 +615,15 @@
 
 import FooterApp from '@/elements/FooterApp.vue';
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 
 export default {
   name: 'AdminPanel',
-  
+
   components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
   
   data() {

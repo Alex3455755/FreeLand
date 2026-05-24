@@ -1,5 +1,10 @@
 <template>
   <div class="modal-overlay register-page">
+    <SEOHead
+      title="Регистрация на бирже фриланса FreeLand"
+      description="Создайте бесплатный аккаунт на FreeLand: размещайте проекты как заказчик или находите заказы как фрилансер. Быстрая регистрация за пару минут."
+      keywords="регистрация, создать аккаунт, фриланс, FreeLand"
+    />
     <div class="modal-content register-card ios-glass ios-glass-heavy">
 
       <h2 class="form-title">Регистрация</h2>
@@ -14,7 +19,7 @@
 
         <div class="form-group">
           <label>Телефон</label>
-          <input v-model="form.phone" type="text" required />
+          <input v-model="form.phone" type="tel" inputmode="tel" maxlength="18" placeholder="+7XXXXXXXXXX или 8XXXXXXXXXX" required />
         </div>
 
         <div class="form-group">
@@ -102,6 +107,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import SEOHead from '@/elements/SEOHead.vue'
 
 const API_URL = ''
 const router = useRouter()
@@ -129,6 +135,11 @@ const getCsrfToken = () => {
   return token || ''
 }
 
+// Нормализация телефона: убираем пробелы, скобки и дефисы
+const normalizePhone = (raw) => String(raw || '').replace(/[\s\-()]/g, '')
+// Российский формат: +7XXXXXXXXXX (12 символов) или 8XXXXXXXXXX (11 символов)
+const isValidRuPhone = (raw) => /^(\+7|8)\d{10}$/.test(normalizePhone(raw))
+
 const validateForm = () => {
   const fullName = form.full_name.trim()
   const phone = form.phone.trim()
@@ -136,7 +147,7 @@ const validateForm = () => {
   const password = form.password
 
   if (fullName.length < 2) return 'Введите корректное ФИО'
-  if (!/^\+?[0-9\s\-()]{7,20}$/.test(phone)) return 'Введите корректный номер телефона'
+  if (!isValidRuPhone(phone)) return 'Телефон должен быть в формате +7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)'
   if (login.length < 3) return 'Логин должен быть не короче 3 символов'
   if (password.length < 6) return 'Пароль должен быть не короче 6 символов'
   if (!form.role) return 'Выберите роль'
@@ -160,7 +171,7 @@ const handleRegister = async () => {
     console.log('Отправляемые данные:', form)
     const userData = {
       full_name: form.full_name,
-      phone: form.phone,
+      phone: normalizePhone(form.phone),
       login: form.login,
       avatar: form.avatar || null,
       password: form.password,

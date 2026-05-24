@@ -1,5 +1,10 @@
 <template>
   <div class="modal-overlay login-page">
+    <SEOHead
+      title="Вход в личный кабинет — FreeLand"
+      description="Войдите в аккаунт FreeLand, чтобы управлять проектами, откликами и сообщениями на бирже фриланса."
+      keywords="вход, авторизация, личный кабинет, FreeLand"
+    />
     <div class="modal-content login-card ios-glass ios-glass-heavy">
       <h2 class="login-title">Вход в аккаунт</h2>
       
@@ -152,6 +157,7 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import SEOHead from '@/elements/SEOHead.vue'
 
 const router = useRouter()
 const route = useRoute()

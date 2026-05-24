@@ -1,6 +1,14 @@
 <!-- resources/js/components/UserDetail.vue -->
 <template>
   <div class="user-detail-page">
+    <SEOHead
+      :title="seoData.title"
+      :description="seoData.description"
+      :keywords="seoData.keywords"
+      :og-title="seoData.title"
+      :og-description="seoData.description"
+      :canonical="seoData.canonical"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -298,13 +306,15 @@
 
 <script>
 import HeaderMenu from '@/elements/HeaderMenu.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 import { avatarSrc } from '@/utils/avatar';
 
 export default {
   name: 'UserDetail',
-  
+
   components: {
-    HeaderMenu
+    HeaderMenu,
+    SEOHead
   },
   
   data() {
@@ -336,6 +346,20 @@ export default {
   },
   
   computed: {
+    seoData() {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const displayName = this.user?.full_name || this.user?.login
+      return {
+        title: displayName
+          ? `${displayName} — профиль специалиста на FreeLand`
+          : 'Профиль специалиста — FreeLand',
+        description: displayName
+          ? `Профиль специалиста ${displayName} на бирже FreeLand: рейтинг, отзывы и информация для сотрудничества.`
+          : 'Просмотр профиля специалиста на FreeLand: рейтинг, отзывы и контактная информация.',
+        keywords: 'профиль фрилансера, специалист, отзывы, рейтинг, портфолио',
+        canonical: origin + (this.user?.id ? `/freelancers/${this.user.id}` : '/freelancer')
+      }
+    },
     isFreelancer() {
       return this.user && (this.user.role === 'freelancer' || this.user.role === 'Фрилансер' || this.user.role === 2);
     },

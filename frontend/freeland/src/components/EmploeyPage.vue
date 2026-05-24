@@ -1,5 +1,13 @@
 <template>
   <div class="team-page">
+    <SEOHead
+      :title="seoData.title"
+      :description="seoData.description"
+      :keywords="seoData.keywords"
+      :og-title="seoData.title"
+      :og-description="seoData.description"
+      :canonical="seoData.canonical"
+    />
     <HeaderMenu />
     <!-- Динамический фон (декоративный) -->
     <div class="dynamic-background">
@@ -175,14 +183,22 @@
 <script>
 import HeaderMenu from '@/elements/HeaderMenu.vue';
 import FooterApp from '@/elements/FooterApp.vue';
+import SEOHead from '@/elements/SEOHead.vue';
 export default {
   name: 'TeamPage',
     components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
   data() {
     return {
+      seoData: {
+        title: 'Наша команда и отзывы клиентов — FreeLand',
+        description: 'Познакомьтесь с командой FreeLand и отзывами пользователей платформы. Эксперты, которые развивают биржу фриланса, и реальные истории клиентов.',
+        keywords: 'команда FreeLand, отзывы о бирже, о компании, контакты',
+        canonical: (typeof window !== 'undefined' ? window.location.origin : '') + '/emploee'
+      },
       // Данные команды
       experts: [
         {

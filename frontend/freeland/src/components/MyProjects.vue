@@ -1,6 +1,11 @@
 <!-- resources/js/components/MyProjects.vue -->
 <template>
   <div class="my-projects-page">
+    <SEOHead
+      title="Мои проекты — FreeLand"
+      description="Управление вашими проектами и заявками на бирже FreeLand: отслеживание статусов, оплата и общение с исполнителями."
+      :noindex="true"
+    />
     <!-- Динамический фон -->
     <div class="dynamic-background">
       <div class="gradient-sphere sphere-1"></div>
@@ -539,6 +544,7 @@
 <script>
 import FooterApp from '@/elements/FooterApp.vue'
 import HeaderMenu from '@/elements/HeaderMenu.vue'
+import SEOHead from '@/elements/SEOHead.vue'
 import { avatarSrc } from '@/utils/avatar'
 import { isCustomerRole } from '@/utils/roles'
 
@@ -547,7 +553,8 @@ export default {
 
   components: {
     HeaderMenu,
-    FooterApp
+    FooterApp,
+    SEOHead
   },
 
   data() {
