@@ -50,7 +50,12 @@
         <!-- Фильтры и поиск -->
         <div class="filters-wrapper">
           <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
             <input 
               type="text" 
               v-model="searchQuery" 
@@ -125,7 +130,9 @@
               
               <button class="view-button" @click.stop="openProject(project.id)">
                 Подробнее
-                <span class="button-arrow">→</span>
+                <span class="button-arrow">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </span>
               </button>
             </div>
           </div>
@@ -1000,12 +1007,18 @@ export default {
 
 .search-icon {
   position: absolute;
-  left: 20px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.2rem;
   color: var(--text-tertiary);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.search-icon svg {
+  display: block;
 }
 
 .search-input {
@@ -1248,6 +1261,12 @@ export default {
 
 .button-arrow {
   transition: transform 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.button-arrow svg {
+  display: block;
 }
 
 .view-button:hover .button-arrow {

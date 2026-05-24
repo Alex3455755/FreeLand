@@ -11,7 +11,7 @@ class FreeLandMailService
         $this->sendCodeMail(
             $toEmail,
             $plainCode,
-            'FreeLand — код подтверждения email',
+            'FreeLand',
             'Подтверждение регистрации',
             'Чтобы завершить регистрацию, введите этот код на сайте:'
         );
@@ -22,7 +22,7 @@ class FreeLandMailService
         $this->sendCodeMail(
             $toEmail,
             $plainCode,
-            'FreeLand — код для входа',
+            'FreeLand',
             'Восстановление доступа',
             'Чтобы войти в аккаунт, введите этот код на странице входа:'
         );
@@ -44,6 +44,8 @@ class FreeLandMailService
         $mail->Password = 'wjdd rplm hkhi ijhp';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port = 465;
+        $mail->CharSet = 'UTF-8';
+        $mail->Encoding = 'base64';
 
         $mail->SMTPOptions = [
             'ssl' => [

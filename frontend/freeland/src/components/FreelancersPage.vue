@@ -39,7 +39,12 @@
         <!-- Фильтры и поиск -->
         <div class="filters-wrapper">
           <div class="search-box">
-            <span class="search-icon">🔍</span>
+            <span class="search-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </span>
             <input 
               type="text" 
               v-model="searchQuery" 
@@ -121,7 +126,14 @@
 
       <!-- Пустое состояние -->
       <div v-else class="empty-state ios-glass">
-        <div class="empty-icon">👥</div>
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" width="72" height="72" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
         <h3 class="empty-title">Фрилансеры не найдены</h3>
         <p class="empty-text">Попробуйте изменить параметры поиска</p>
         <button @click="resetFilters" class="reset-button ios-glass">
@@ -418,12 +430,18 @@ export default {
 
 .search-icon {
   position: absolute;
-  left: 20px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.2rem;
   color: var(--text-tertiary);
   z-index: 2;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.search-icon svg {
+  display: block;
 }
 
 .search-input {
@@ -816,9 +834,13 @@ export default {
 }
 
 .empty-icon {
-  font-size: 5rem;
   margin-bottom: 20px;
+  color: var(--text-secondary);
   filter: drop-shadow(0 10px 20px rgba(168, 209, 255, 0.2));
+}
+
+.empty-icon svg {
+  display: inline-block;
 }
 
 .empty-title {

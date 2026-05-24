@@ -296,13 +296,48 @@
         <div v-if="activeTab === 'statistics'" class="admin-section">
           <div class="section-header">
             <h2 class="section-title">Статистика и аналитика</h2>
+            <div class="period-switch">
+              <button
+                v-for="p in periods"
+                :key="p.value"
+                class="period-btn"
+                :class="{ active: statsPeriod === p.value }"
+                @click="setPeriod(p.value)"
+              >
+                {{ p.label }}
+              </button>
+            </div>
           </div>
 
-          <div v-if="!stats" class="ios-glass stats-placeholder">
-            <p>Загрузка статистики…</p>
+          <div v-if="!stats" class="loading-state">
+            <div class="loader ios-glass">
+              <div class="loader-spinner"></div>
+              <p>Загрузка статистики…</p>
+            </div>
           </div>
 
           <template v-else>
+            <div class="table-container ios-glass chart-block" style="margin-bottom: 28px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 6px;">Доход сайта (комиссии) за период</h3>
+              <div class="revenue-total">{{ formatBudget(stats.commission_total) }}</div>
+              <div v-if="revenueChart.hasData" class="line-chart-wrap">
+                <svg class="line-chart" :viewBox="`0 0 ${revenueChart.w} ${revenueChart.h}`">
+                  <defs>
+                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="rgba(42,127,201,0.45)" />
+                      <stop offset="100%" stop-color="rgba(42,127,201,0)" />
+                    </linearGradient>
+                  </defs>
+                  <line :x1="36" :y1="revenueChart.baseY" :x2="revenueChart.w - 36" :y2="revenueChart.baseY" stroke="rgba(168,209,255,0.2)" stroke-width="1" />
+                  <path :d="revenueChart.areaPath" fill="url(#revGrad)" />
+                  <path :d="revenueChart.linePath" fill="none" stroke="#6BB2F0" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+                  <circle v-for="(pt, i) in revenueChart.points" :key="'p' + i" :cx="pt.x" :cy="pt.y" r="3" fill="#A8D1FF" />
+                  <text v-for="(pt, i) in revenueChart.labels" :key="'l' + i" :x="pt.x" :y="revenueChart.h - 6" text-anchor="middle" class="axis-label">{{ pt.label }}</text>
+                </svg>
+              </div>
+              <div v-else class="chart-empty">Нет дохода за выбранный период</div>
+            </div>
+
             <div class="stats-cards">
               <div class="stat-card ios-glass">
                 <div class="stat-card-label">Всего заказов</div>
@@ -314,8 +349,28 @@
               </div>
             </div>
 
-            <div class="table-container ios-glass" style="margin-top: 20px;">
+            <div class="table-container ios-glass chart-block" style="margin-top: 20px;">
               <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Комиссия по типам операций</h3>
+              <div class="donut-wrap">
+                <div class="donut" :style="{ background: commissionChart.gradient }">
+                  <div class="donut-hole">
+                    <span class="donut-total">{{ formatBudget(commissionChart.total) }}</span>
+                    <span class="donut-cap">всего</span>
+                  </div>
+                </div>
+                <ul class="chart-legend">
+                  <li v-for="s in commissionChart.segments" :key="s.type">
+                    <span class="legend-dot" :style="{ background: s.color }"></span>
+                    <span class="legend-label">{{ s.label }}</span>
+                    <span class="legend-value">{{ formatBudget(s.value) }} · {{ s.percent.toFixed(1) }}%</span>
+                  </li>
+                  <li v-if="!commissionChart.segments.length" class="chart-empty">Нет данных</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="table-container ios-glass" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Комиссия по типам операций — детально</h3>
               <table class="admin-table">
                 <thead>
                   <tr>
@@ -335,8 +390,22 @@
               </table>
             </div>
 
-            <div class="table-container ios-glass" style="margin-top: 20px;">
+            <div class="table-container ios-glass chart-block" style="margin-top: 20px;">
               <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Заказы по категориям</h3>
+              <div class="bar-chart">
+                <div v-for="row in categoryChart" :key="row.name" class="bar-row">
+                  <span class="bar-label">{{ row.name }}</span>
+                  <div class="bar-track">
+                    <div class="bar-fill" :style="{ width: row.percent + '%', background: row.color }"></div>
+                  </div>
+                  <span class="bar-value">{{ row.count }}</span>
+                </div>
+                <div v-if="!categoryChart.length" class="chart-empty">Нет данных</div>
+              </div>
+            </div>
+
+            <div class="table-container ios-glass" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Заказы по категориям — детально</h3>
               <table class="admin-table">
                 <thead>
                   <tr>
@@ -356,8 +425,22 @@
               </table>
             </div>
 
+            <div class="table-container ios-glass chart-block" style="margin-top: 20px;">
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Топ исполнителей по обороту</h3>
+              <div class="bar-chart">
+                <div v-for="(row, idx) in freelancersChart" :key="idx" class="bar-row">
+                  <span class="bar-label">{{ idx + 1 }}. {{ row.name }}</span>
+                  <div class="bar-track">
+                    <div class="bar-fill alt" :style="{ width: row.percent + '%' }"></div>
+                  </div>
+                  <span class="bar-value">{{ formatBudget(row.volume) }}</span>
+                </div>
+                <div v-if="!freelancersChart.length" class="chart-empty">Пока нет оплаченных заказов</div>
+              </div>
+            </div>
+
             <div class="table-container ios-glass" style="margin-top: 20px;">
-              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Топ исполнителей (оплаченные проекты)</h3>
+              <h3 class="section-title" style="font-size: 1.15rem; margin-bottom: 12px;">Топ исполнителей (оплаченные проекты) — детально</h3>
               <table class="admin-table">
                 <thead>
                   <tr>
@@ -431,7 +514,9 @@
       <div class="modal-content ios-glass">
         <div class="modal-header">
           <h3 class="modal-title">{{ modalTitle }}</h3>
-          <button class="modal-close" @click="closeModal">✕</button>
+          <button class="modal-close" @click="closeModal">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
 
         <div class="modal-body">
@@ -594,7 +679,9 @@
       <div class="modal-content ios-glass delete-confirm">
         <div class="modal-header">
           <h3 class="modal-title">Подтверждение удаления</h3>
-          <button class="modal-close" @click="cancelDelete">✕</button>
+          <button class="modal-close" @click="cancelDelete">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
         <div class="modal-body">
           <p>Вы уверены, что хотите удалить {{ deleteItemType }} "{{ deleteItemName }}"?</p>
@@ -641,6 +728,14 @@ export default {
 
       adminUserId: null,
       stats: null,
+      statsPeriod: 'all',
+      statsLoading: false,
+      periods: [
+        { value: 'week', label: 'Неделя' },
+        { value: 'month', label: 'Месяц' },
+        { value: 'year', label: 'Год' },
+        { value: 'all', label: 'Всё время' }
+      ],
       commissionForm: {
         deposit_commission_percent: 5,
         withdraw_commission_percent: 5
@@ -681,9 +776,107 @@ export default {
         payment: 'платежа'
       };
       return `${action} ${typeMap[this.modalType] || ''}`;
+    },
+
+    // Палитра для диаграмм (в синей гамме сайта)
+    chartColors() {
+      return ['#2A7FC9', '#A8D1FF', '#6BB2F0', '#1A6BB3', '#27ae60', '#f1c40f', '#e67e22', '#e74c3c'];
+    },
+
+    // Кольцевая диаграмма: комиссия по типам операций
+    commissionChart() {
+      const data = this.stats?.commission_by_type || {};
+      const entries = Object.entries(data)
+        .map(([type, sum]) => ({ type, label: this.paymentTypeLabel(type), value: Number(sum) || 0 }))
+        .filter((e) => e.value > 0);
+      const total = entries.reduce((s, e) => s + e.value, 0);
+      let acc = 0;
+      const segments = entries.map((e, i) => {
+        const percent = total > 0 ? (e.value / total) * 100 : 0;
+        const seg = {
+          ...e,
+          percent,
+          color: this.chartColors[i % this.chartColors.length],
+          start: acc,
+          end: acc + percent
+        };
+        acc += percent;
+        return seg;
+      });
+      const gradient = segments.length
+        ? 'conic-gradient(' + segments.map((s) => `${s.color} ${s.start}% ${s.end}%`).join(', ') + ')'
+        : 'conic-gradient(rgba(168, 209, 255, 0.15) 0% 100%)';
+      return { segments, total, gradient };
+    },
+
+    // Столбчатая диаграмма: заказы по категориям
+    categoryChart() {
+      const rows = this.stats?.projects_by_category || [];
+      const max = Math.max(1, ...rows.map((r) => Number(r.projects_count) || 0));
+      return rows.map((r, i) => ({
+        name: r.category_name || 'Без категории',
+        count: Number(r.projects_count) || 0,
+        percent: ((Number(r.projects_count) || 0) / max) * 100,
+        color: this.chartColors[i % this.chartColors.length]
+      }));
+    },
+
+    // Столбчатая диаграмма: топ исполнителей по обороту
+    freelancersChart() {
+      const rows = this.stats?.top_freelancers || [];
+      const max = Math.max(1, ...rows.map((r) => Number(r.total_volume) || 0));
+      return rows.map((r) => ({
+        name: r.full_name || r.login || ('ID ' + r.user_id),
+        volume: Number(r.total_volume) || 0,
+        count: r.paid_projects_count,
+        percent: ((Number(r.total_volume) || 0) / max) * 100
+      }));
+    },
+
+    // Линейный график дохода (комиссии) по времени
+    revenueChart() {
+      const series = this.stats?.revenue_series || [];
+      const w = 760;
+      const h = 240;
+      const padX = 36;
+      const padY = 24;
+      const innerW = w - padX * 2;
+      const innerH = h - padY * 2;
+      const n = series.length;
+      const max = Math.max(1, ...series.map((p) => Number(p.value) || 0));
+      const stepX = n > 1 ? innerW / (n - 1) : 0;
+
+      const points = series.map((p, i) => {
+        const x = padX + (n > 1 ? i * stepX : innerW / 2);
+        const value = Number(p.value) || 0;
+        const y = padY + innerH - (value / max) * innerH;
+        return { x: +x.toFixed(2), y: +y.toFixed(2), label: p.label, value };
+      });
+
+      const linePath = points.map((pt, i) => (i === 0 ? 'M' : 'L') + pt.x + ' ' + pt.y).join(' ');
+      const baseY = padY + innerH;
+      const areaPath = points.length
+        ? `M${points[0].x} ${baseY} ` + points.map((pt) => `L${pt.x} ${pt.y}`).join(' ') + ` L${points[points.length - 1].x} ${baseY} Z`
+        : '';
+
+      const step = Math.max(1, Math.ceil(n / 6));
+      const labels = points
+        .map((pt, i) => ({ ...pt, i }))
+        .filter((pt) => pt.i === 0 || pt.i === n - 1 || pt.i % step === 0);
+
+      return {
+        w,
+        h,
+        baseY,
+        points,
+        labels,
+        linePath,
+        areaPath,
+        hasData: series.some((p) => (Number(p.value) || 0) > 0)
+      };
     }
   },
-  
+
   mounted() {
     this.bootstrapAdminPanel()
   },
@@ -836,19 +1029,29 @@ export default {
       }
     },
 
+    setPeriod(period) {
+      if (this.statsPeriod === period) return
+      this.statsPeriod = period
+      this.fetchStatistics()
+    },
+
     async fetchStatistics() {
       const token = localStorage.getItem('token')
       if (!token) {
         this.stats = null
         return
       }
+      this.statsLoading = true
       try {
-        const response = await fetch(`${this.apiBaseUrl}/api/admin/statistics`, {
-          headers: {
-            Accept: 'application/json',
-            Authorization: `Bearer ${token}`
+        const response = await fetch(
+          `${this.apiBaseUrl}/api/admin/statistics?period=${this.statsPeriod}`,
+          {
+            headers: {
+              Accept: 'application/json',
+              Authorization: `Bearer ${token}`
+            }
           }
-        })
+        )
         const data = await response.json().catch(() => ({}))
         if (response.ok && data.success) {
           this.stats = data
@@ -858,6 +1061,8 @@ export default {
       } catch (e) {
         console.error('fetchStatistics', e)
         this.stats = null
+      } finally {
+        this.statsLoading = false
       }
     },
 
@@ -1465,6 +1670,219 @@ export default {
   font-weight: 700;
   color: #FFFFFF;
   text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+}
+
+/* ===== Диаграммы статистики ===== */
+.chart-block {
+  overflow: visible;
+}
+
+/* Кольцевая диаграмма */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.donut {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(8, 51, 88, 0.4);
+}
+
+.donut-hole {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: #0c2744;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.donut-total {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.donut-cap {
+  font-size: 0.8rem;
+  color: #A8D1FF;
+  opacity: 0.85;
+}
+
+.chart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #F0F8FF;
+  font-size: 0.95rem;
+}
+
+.legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  flex: 1;
+}
+
+.legend-value {
+  color: #A8D1FF;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Столбчатая диаграмма */
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  align-items: center;
+  gap: 14px;
+}
+
+.bar-label {
+  color: #F0F8FF;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-track {
+  height: 14px;
+  border-radius: 9999px;
+  background: rgba(168, 209, 255, 0.12);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #2A7FC9, #6BB2F0);
+  min-width: 6px;
+  transition: width 0.6s ease;
+}
+
+.bar-fill.alt {
+  background: linear-gradient(90deg, #27ae60, #6be0a0);
+}
+
+.bar-value {
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.chart-empty {
+  color: #A8D1FF;
+  opacity: 0.8;
+  padding: 10px 0;
+}
+
+/* Переключатель периода */
+.period-switch {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 9999px;
+  background: rgba(10, 77, 140, 0.25);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  flex-wrap: wrap;
+}
+
+.period-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: #A8D1FF;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.period-btn:hover {
+  background: rgba(168, 209, 255, 0.12);
+  color: #FFFFFF;
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #1A6BB3, #2A7FC9);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px rgba(8, 51, 88, 0.4);
+}
+
+/* Линейный график дохода */
+.revenue-total {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 2px 10px rgba(168, 209, 255, 0.3);
+  margin-bottom: 12px;
+}
+
+.line-chart-wrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+.line-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.line-chart .axis-label {
+  fill: #A8D1FF;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+  .bar-row {
+    grid-template-columns: 110px 1fr auto;
+    gap: 10px;
+  }
+
+  .bar-label {
+    font-size: 0.85rem;
+  }
+
+  .donut-wrap {
+    justify-content: center;
+  }
 }
 
 .stats-placeholder {

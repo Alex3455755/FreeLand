@@ -486,6 +486,11 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Непрозрачный фон в фирменной синей гамме сайта */
+  background: linear-gradient(160deg, #1A6BB3 0%, #0A4D8C 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-left: 1px solid rgba(168, 209, 255, 0.35);
 }
 
 .mobile-drawer.open {

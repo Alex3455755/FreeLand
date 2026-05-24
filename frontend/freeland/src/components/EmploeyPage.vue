@@ -91,14 +91,18 @@
         <h2 class="section-title">Обратная связь и отзывы</h2>
         
         <!-- Индикатор загрузки -->
-        <div v-if="loading" class="loading-indicator">
-          <div class="spinner"></div>
-          <p>Загрузка отзывов...</p>
+        <div v-if="loading" class="loading-state">
+          <div class="loader ios-glass">
+            <div class="loader-spinner"></div>
+            <p>Загрузка отзывов...</p>
+          </div>
         </div>
 
         <!-- Сообщение об ошибке -->
         <div v-if="error" class="error-message ios-glass">
-          <span class="error-icon">⚠️</span>
+          <span class="error-icon">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          </span>
           <p>{{ error }}</p>
           <button @click="fetchReviews" class="retry-btn">Повторить</button>
         </div>
@@ -1170,21 +1174,32 @@ textarea.form-control {
   filter: drop-shadow(0 2px 6px #6BB2F0);
 }
 
-/* Индикатор загрузки */
-.loading-indicator {
-  text-align: center;
-  padding: 60px;
-  color: var(--text-secondary);
+/* Индикатор загрузки (как на странице проектов) */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
 }
 
-.spinner {
+.loader {
+  padding: 40px 60px;
+  text-align: center;
+}
+
+.loader-spinner {
   width: 50px;
   height: 50px;
-  border: 3px solid rgba(168,209,255,0.3);
-  border-top-color: var(--blue-very-pale);
+  border: 3px solid rgba(168, 209, 255, 0.1);
+  border-top-color: #F0F8FF;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
   margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+.loader p {
+  color: #F0F8FF;
+  font-size: 1.1rem;
 }
 
 @keyframes spin {
@@ -1200,9 +1215,13 @@ textarea.form-control {
 }
 
 .error-icon {
-  font-size: 3rem;
   display: block;
   margin-bottom: 15px;
+  color: #f0ad4e;
+}
+
+.error-icon svg {
+  display: inline-block;
 }
 
 .retry-btn {

@@ -49,8 +49,10 @@
         <p class="section-subtitle">Топ-3 специалиста по рейтингу платформы</p>
 
         <div v-if="freelancersLoading" class="loading-state">
-          <div class="loader-sm"></div>
-          <span>Загрузка фрилансеров...</span>
+          <div class="loader ios-glass">
+            <div class="loader-spinner"></div>
+            <p>Загрузка фрилансеров...</p>
+          </div>
         </div>
 
         <div v-else-if="podium.length" class="podium">
@@ -280,6 +282,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ===== Лоадер (как на странице проектов) ===== */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 320px;
+}
+
+.loader {
+  padding: 40px 60px;
+  text-align: center;
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(168, 209, 255, 0.1);
+  border-top-color: #F0F8FF;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+.loader p {
+  color: #F0F8FF;
+  font-size: 1.1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ===== Подзаголовок секций ===== */
 .section-subtitle {
   text-align: center;

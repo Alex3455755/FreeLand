@@ -21,13 +21,18 @@
         <p class="page-subtitle">Переписка с заказчиками и фрилансерами</p>
       </div>
 
-      <div v-if="loadingUser" class="loading-block ios-glass">Загрузка пользователя...</div>
+      <div v-if="loadingUser" class="loading-state">
+        <div class="loader ios-glass">
+          <div class="loader-spinner"></div>
+          <p>Загрузка пользователя...</p>
+        </div>
+      </div>
       <div v-else-if="!user" class="loading-block ios-glass">Нужно авторизоваться</div>
 
       <div v-else class="chat-layout">
         <aside class="chat-list ios-glass">
           <div class="chat-list-title">Диалоги</div>
-          <div v-if="chatsLoading" class="chat-list-empty">Загрузка чатов...</div>
+          <div v-if="chatsLoading" class="chat-list-empty"><span class="loader-sm"></span>Загрузка чатов...</div>
           <div v-else-if="chats.length === 0" class="chat-list-empty">Чатов пока нет</div>
 
           <button
@@ -50,7 +55,7 @@
             </div>
 
             <div class="messages" ref="messagesContainer">
-              <div v-if="messagesLoading" class="chat-list-empty">Загрузка сообщений...</div>
+              <div v-if="messagesLoading" class="chat-list-empty"><span class="loader-sm"></span>Загрузка сообщений...</div>
               <div v-else-if="messages.length === 0" class="chat-list-empty">Нет сообщений</div>
               <div
                 v-else
@@ -67,7 +72,8 @@
                   rel="noopener noreferrer"
                   class="message-file-link"
                 >
-                  📎 {{ message.attachment_name || 'Скачать файл' }}
+                  <svg class="file-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                  <span>{{ message.attachment_name || 'Скачать файл' }}</span>
                 </a>
                 <a
                   v-if="message.attachment_url && messageIsImage(message)"
@@ -83,7 +89,9 @@
 
             <div v-if="pendingAttachmentName" class="attachment-pill">
               <span>{{ pendingAttachmentName }}</span>
-              <button type="button" class="attachment-remove" @click="clearAttachment">×</button>
+              <button type="button" class="attachment-remove" @click="clearAttachment">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
             </div>
 
             <div class="send-row">
@@ -441,6 +449,50 @@ export default {
 .page-title { color: #fff; margin: 0; }
 .page-subtitle { color: #f0f8ff; opacity: 0.85; margin-top: 8px; }
 .loading-block { padding: 24px; text-align: center; color: #fff; }
+
+/* Лоадер как на странице проектов */
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.loader {
+  padding: 40px 60px;
+  text-align: center;
+}
+
+.loader-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid rgba(168, 209, 255, 0.1);
+  border-top-color: #F0F8FF;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  animation: spin 1s linear infinite;
+}
+
+.loader p {
+  color: #F0F8FF;
+  font-size: 1.1rem;
+}
+
+.loader-sm {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(168, 209, 255, 0.25);
+  border-top-color: #F0F8FF;
+  border-radius: 50%;
+  margin-right: 8px;
+  vertical-align: middle;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .chat-layout { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); gap: 20px; min-height: 74vh; align-items: stretch; }
 .chat-list, .chat-content { padding: 18px; min-width: 0; min-height: 74vh; }
 .chat-content { display: flex; flex-direction: column; }
@@ -456,11 +508,12 @@ export default {
 .message { display: block; max-width: 80%; margin: 6px 0; padding: 10px 12px; border-radius: 14px; background: rgba(10,77,140,0.3); color: #fff; }
 .message.mine { background: rgba(52,152,219,0.45); align-self: flex-end; }
 .message-text { white-space: pre-wrap; word-break: break-word; }
-.message-file-link { display: inline-block; margin-top: 6px; color: #a8d1ff; text-decoration: underline; font-size: 0.95rem; }
+.message-file-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; color: #a8d1ff; text-decoration: underline; font-size: 0.95rem; }
+.message-file-link .file-icon { flex-shrink: 0; }
 .message-image-wrap { display: block; margin-top: 8px; max-width: 260px; }
 .message-image { width: 100%; border-radius: 10px; display: block; border: 1px solid rgba(168,209,255,0.25); }
 .attachment-pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; border-radius: 9999px; background: rgba(10,77,140,0.35); color: #fff; font-size: 0.9rem; }
-.attachment-remove { border: none; background: transparent; color: #f0f8ff; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0 4px; }
+.attachment-remove { border: none; background: transparent; color: #f0f8ff; cursor: pointer; line-height: 1; padding: 0 4px; display: inline-flex; align-items: center; }
 .send-row { display: flex; gap: 10px; margin-top: 14px; align-items: flex-end; flex-wrap: wrap; }
 .chat-file-input { display: none; }
 .attach-btn { flex-shrink: 0; border: 1px solid rgba(168,209,255,0.35); background: rgba(10,77,140,0.35); color: #e8f4ff; border-radius: 9999px; padding: 12px 16px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }

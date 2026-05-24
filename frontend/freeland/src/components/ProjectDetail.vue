@@ -34,7 +34,8 @@
 
       <div v-else-if="project" class="project-detail ios-glass">
         <button @click="goBack" class="back-button ios-glass">
-          ← Назад к проектам
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Назад к проектам
         </button>
 
         <div class="project-header">
@@ -142,7 +143,9 @@
                 <!-- Кнопка удаления исполнителя (только для автора) -->
                 <div v-if="isAuthor" class="freelancer-actions">
                   <button @click="confirmRemoveFreelancer" class="remove-freelancer-button">
-                    <span class="button-icon">🗑️</span>
+                    <span class="button-icon">
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                    </span>
                     Убрать исполнителя
                   </button>
                 </div>
@@ -323,9 +326,9 @@ export default {
   if (!this.myApplication) return null;
 
   const map = {
-    pending: '⏳ На рассмотрении',
-    accepted: '✅ Принята',
-    rejected: '❌ Отклонена'
+    pending: 'На рассмотрении',
+    accepted: 'Принята',
+    rejected: 'Отклонена'
   };
 
   return map[this.myApplication.status] || this.myApplication.status;
@@ -1234,6 +1237,14 @@ export default {
   cursor: pointer;
   margin-bottom: 40px;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button svg,
+.button-icon svg {
+  display: block;
 }
 
 .back-button:hover {

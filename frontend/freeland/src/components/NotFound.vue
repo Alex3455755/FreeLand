@@ -52,13 +52,17 @@
         <!-- Кнопки действий -->
         <div class="error-actions">
           <button @click="goBack" class="action-btn primary">
-            <span class="btn-icon">←</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </span>
             <span class="btn-text">Вернуться назад</span>
             <span class="button-glow"></span>
           </button>
-          
+
           <router-link to="/" class="action-btn secondary">
-            <span class="btn-icon">🏠</span>
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5"></path><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path><path d="M9 21v-6h6v6"></path></svg>
+            </span>
             <span class="btn-text">На главную</span>
             <span class="button-glow"></span>
           </router-link>
@@ -681,9 +685,14 @@ export default {
 }
 
 .btn-icon {
-  font-size: 1.2rem;
   position: relative;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-icon svg {
+  display: block;
 }
 
 .btn-text {

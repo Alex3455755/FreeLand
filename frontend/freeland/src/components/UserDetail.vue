@@ -41,7 +41,8 @@
       <div v-else-if="user" class="user-detail-content">
         <!-- Кнопка назад -->
         <button @click="goBack" class="back-button ios-glass">
-          ← Назад к фрилансерам
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          Назад к фрилансерам
         </button>
 
         <!-- Основная информация -->
@@ -228,7 +229,9 @@
               <!-- Кнопка удаления для автора отзыва или админа -->
               <div v-if="review && review.author_id && canDeleteReview(review)" class="review-actions">
                 <button @click="deleteReview(review.id)" class="delete-review-button">
-                  <span class="button-icon">🗑️</span>
+                  <span class="button-icon">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+                  </span>
                   Удалить
                 </button>
               </div>
@@ -238,7 +241,8 @@
           <div v-else class="no-reviews">
             <p>У пользователя пока нет отзывов</p>
             <button v-if="canLeaveReview" @click="openReviewModal" class="write-review-button ios-glass">
-              ✍️ Написать первый отзыв
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path></svg>
+              Написать первый отзыв
             </button>
           </div>
         </div>
@@ -246,7 +250,9 @@
 
       <!-- Пользователь не найден -->
       <div v-else class="not-found-state ios-glass">
-        <div class="not-found-icon">👤</div>
+        <div class="not-found-icon">
+          <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
         <h3 class="not-found-title">Пользователь не найден</h3>
         <p class="not-found-text">Запрашиваемый профиль не существует или был удален</p>
         <button @click="goBack" class="reset-button ios-glass">
@@ -905,6 +911,9 @@ export default {
   cursor: pointer;
   margin-bottom: 30px;
   transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .back-button:hover {
@@ -1092,7 +1101,14 @@ export default {
 }
 
 .button-icon {
-  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.back-button svg,
+.button-icon svg,
+.write-review-button svg {
+  display: block;
 }
 
 /* Сетка деталей */
@@ -1542,6 +1558,9 @@ export default {
   border: 1px solid rgba(168, 209, 255, 0.3);
   border-radius: 9999px;
   color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -1801,9 +1820,13 @@ textarea.form-input {
 }
 
 .not-found-icon {
-  font-size: 5rem;
   margin-bottom: 20px;
+  color: var(--text-secondary);
   filter: drop-shadow(0 10px 20px rgba(168, 209, 255, 0.2));
+}
+
+.not-found-icon svg {
+  display: inline-block;
 }
 
 .not-found-title {

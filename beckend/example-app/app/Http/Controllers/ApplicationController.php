@@ -173,6 +173,8 @@ class ApplicationController extends Controller
                 $mail->Password = 'wjdd rplm hkhi ijhp';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
+                $mail->CharSet = 'UTF-8';
+                $mail->Encoding = 'base64';
 
                 $mail->SMTPOptions = [
                     'ssl' => [
@@ -234,6 +236,8 @@ class ApplicationController extends Controller
                 $mail->Password = 'wjdd rplm hkhi ijhp';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
                 $mail->Port = 465;
+                $mail->CharSet = 'UTF-8';
+                $mail->Encoding = 'base64';
 
                 $mail->SMTPOptions = [
                     'ssl' => [

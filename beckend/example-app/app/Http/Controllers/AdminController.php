@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
@@ -75,16 +76,41 @@ class AdminController extends Controller
         ]);
     }
 
-    public function statistics()
+    public function statistics(Request $request)
     {
-        $commissionTotal = (float) (Payment::query()
-            ->where('status', 'paid')
-            ->whereIn('type', ['input', 'output', 'transfer'])
-            ->sum('commission') ?? 0);
+        // Период: неделя / месяц / год / всё время
+        $period = $request->query('period', 'all');
+        if (!in_array($period, ['week', 'month', 'year', 'all'], true)) {
+            $period = 'all';
+        }
 
-        $categoryStats = Project::query()
-            ->selectRaw('category_id, COUNT(*) as projects_count')
-            ->whereNotNull('category_id')
+        $now = Carbon::now();
+        $start = match ($period) {
+            'week'  => $now->copy()->subDays(6)->startOfDay(),
+            'month' => $now->copy()->subDays(29)->startOfDay(),
+            'year'  => $now->copy()->subMonths(11)->startOfMonth(),
+            default => null,
+        };
+
+        // Хелпер: применяет фильтр по дате создания, если задан период
+        $applyPeriod = function ($query) use ($start) {
+            if ($start) {
+                $query->where('created_at', '>=', $start);
+            }
+            return $query;
+        };
+
+        $commissionTotal = (float) ($applyPeriod(
+            Payment::query()
+                ->where('status', 'paid')
+                ->whereIn('type', ['input', 'output', 'transfer'])
+        )->sum('commission') ?? 0);
+
+        $categoryStats = $applyPeriod(
+            Project::query()
+                ->selectRaw('category_id, COUNT(*) as projects_count')
+                ->whereNotNull('category_id')
+        )
             ->groupBy('category_id')
             ->orderByDesc('projects_count')
             ->get();
@@ -102,12 +128,14 @@ class AdminController extends Controller
             ];
         })->values();
 
-        $freelancerRows = Payment::query()
-            ->selectRaw('freelancer_id, COUNT(DISTINCT project_id) as paid_projects_count, SUM(amount) as total_volume')
-            ->where('status', 'paid')
-            ->where('type', 'transfer')
-            ->whereColumn('customer_id', '!=', 'freelancer_id')
-            ->whereNotNull('project_id')
+        $freelancerRows = $applyPeriod(
+            Payment::query()
+                ->selectRaw('freelancer_id, COUNT(DISTINCT project_id) as paid_projects_count, SUM(amount) as total_volume')
+                ->where('status', 'paid')
+                ->where('type', 'transfer')
+                ->whereColumn('customer_id', '!=', 'freelancer_id')
+                ->whereNotNull('project_id')
+        )
             ->groupBy('freelancer_id')
             ->orderByDesc('paid_projects_count')
             ->limit(25)
@@ -128,22 +156,84 @@ class AdminController extends Controller
             ];
         })->values();
 
-        $projectsTotal = (int) Project::query()->count();
-        $paymentsCommissionByType = Payment::query()
-            ->selectRaw('type, SUM(commission) as commission_sum')
-            ->where('status', 'paid')
-            ->whereIn('type', ['input', 'output', 'transfer'])
+        $projectsTotal = (int) $applyPeriod(Project::query())->count();
+
+        $paymentsCommissionByType = $applyPeriod(
+            Payment::query()
+                ->selectRaw('type, SUM(commission) as commission_sum')
+                ->where('status', 'paid')
+                ->whereIn('type', ['input', 'output', 'transfer'])
+        )
             ->groupBy('type')
             ->get()
             ->mapWithKeys(fn ($r) => [$r->type => round((float) $r->commission_sum, 2)]);
 
+        // ===== Временной ряд дохода (комиссии) =====
+        // Для недели/месяца — по дням, для года/всего — по месяцам
+        $grouping = in_array($period, ['week', 'month'], true) ? 'day' : 'month';
+
+        $seriesQuery = Payment::query()
+            ->where('status', 'paid')
+            ->whereIn('type', ['input', 'output', 'transfer']);
+        if ($start) {
+            $seriesQuery->where('created_at', '>=', $start);
+        }
+
+        if ($grouping === 'day') {
+            $bucketExpr = 'DATE(created_at)';
+        } else {
+            $bucketExpr = "DATE_FORMAT(created_at, '%Y-%m')";
+        }
+
+        $seriesRows = $seriesQuery
+            ->selectRaw("$bucketExpr as bucket, SUM(commission) as commission_sum")
+            ->groupBy('bucket')
+            ->orderBy('bucket')
+            ->get()
+            ->keyBy('bucket');
+
+        $revenueSeries = [];
+        if ($grouping === 'day' && $start) {
+            $cursor = $start->copy();
+            $end = $now->copy()->startOfDay();
+            while ($cursor <= $end) {
+                $key = $cursor->format('Y-m-d');
+                $revenueSeries[] = [
+                    'label' => $cursor->format('d.m'),
+                    'value' => round((float) ($seriesRows->get($key)->commission_sum ?? 0), 2),
+                ];
+                $cursor->addDay();
+            }
+        } elseif ($period === 'year' && $start) {
+            $cursor = $start->copy()->startOfMonth();
+            $end = $now->copy()->startOfMonth();
+            while ($cursor <= $end) {
+                $key = $cursor->format('Y-m');
+                $revenueSeries[] = [
+                    'label' => $cursor->format('m.Y'),
+                    'value' => round((float) ($seriesRows->get($key)->commission_sum ?? 0), 2),
+                ];
+                $cursor->addMonth();
+            }
+        } else {
+            // Всё время — по месяцам, только реально существующие
+            foreach ($seriesRows as $key => $row) {
+                $revenueSeries[] = [
+                    'label' => $key,
+                    'value' => round((float) $row->commission_sum, 2),
+                ];
+            }
+        }
+
         return response()->json([
             'success' => true,
+            'period' => $period,
             'commission_total' => round($commissionTotal, 2),
             'commission_by_type' => $paymentsCommissionByType,
             'projects_total' => $projectsTotal,
             'projects_by_category' => $projectsByCategory,
             'top_freelancers' => $topFreelancers,
+            'revenue_series' => $revenueSeries,
         ]);
     }
 }
