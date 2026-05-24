@@ -2550,8 +2550,9 @@ select.form-input option {
 }
 
 .rating-stars {
-  color: #f1c40f;
+  color: var(--rating);
   letter-spacing: 2px;
+  text-shadow: 0 0 8px var(--rating-glow);
 }
 
 /* Действия */

@@ -27,6 +27,11 @@
   --glass-bg: rgba(10, 77, 140, 0.15);
   --glass-border: rgba(168, 209, 255, 0.25);
   --glass-shadow: 0 8px 32px rgba(8, 51, 88, 0.5);
+
+  /* Рейтинг — современный сине-голубой акцент */
+  --rating: #5BC0FF;
+  --rating-empty: rgba(168, 209, 255, 0.25);
+  --rating-glow: rgba(91, 192, 255, 0.5);
 }
 
 body {
@@ -497,9 +502,11 @@ body {
 }
 
 .stars {
-  color: var(--text-secondary);
+  color: var(--rating);
   font-size: 1.2rem;
   margin-right: 4px;
+  text-shadow: 0 0 8px var(--rating-glow);
+  letter-spacing: 1px;
 }
 
 .rating-value {

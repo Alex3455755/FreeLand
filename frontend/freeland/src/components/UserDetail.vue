@@ -1016,14 +1016,15 @@ export default {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: #F0B90B;
-  color: #000000;
+  background: linear-gradient(135deg, var(--blue-soft), var(--blue-light));
+  color: #FFFFFF;
   padding: 6px 12px;
   border-radius: 9999px;
   font-size: 1rem;
   font-weight: 600;
   z-index: 3;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.4);
+  box-shadow: 0 2px 12px var(--rating-glow);
 }
 
 .profile-status {
@@ -1523,12 +1524,13 @@ export default {
 }
 
 .star {
-  color: #bdc3c7;
+  color: var(--rating-empty);
   font-size: 1.2rem;
 }
 
 .star.filled {
-  color: #f1c40f;
+  color: var(--rating);
+  text-shadow: 0 0 8px var(--rating-glow);
 }
 
 .rating-value {
@@ -1693,14 +1695,14 @@ export default {
 
 .rating-star {
   font-size: 2rem;
-  color: #bdc3c7;
+  color: var(--rating-empty);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .rating-star.active {
-  color: #f1c40f;
-  text-shadow: 0 0 15px rgba(241, 196, 15, 0.5);
+  color: var(--rating);
+  text-shadow: 0 0 15px var(--rating-glow);
 }
 
 .rating-star:hover {

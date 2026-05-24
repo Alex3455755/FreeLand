@@ -595,14 +595,15 @@ export default {
   position: absolute;
   bottom: 0;
   right: 0;
-  background: #F0B90B;
-  color: #000000;
-  padding: 4px 8px;
+  background: linear-gradient(135deg, var(--blue-soft), var(--blue-light));
+  color: #FFFFFF;
+  padding: 4px 10px;
   border-radius: 9999px;
   font-size: 0.85rem;
   font-weight: 600;
   z-index: 3;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.4);
+  box-shadow: 0 2px 12px var(--rating-glow);
 }
 
 .freelancer-name {

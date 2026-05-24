@@ -84,8 +84,42 @@
       </div>
     </section>
 
-    <!-- Начать работу -->
-    
+    <!-- Как это работает -->
+    <section class="how-it-works">
+      <div class="container">
+        <h3 class="section-title">Как это работает</h3>
+        <p class="section-subtitle">Всего несколько шагов от идеи до результата</p>
+
+        <div class="how-toggle ios-glass">
+          <button
+            class="how-toggle-btn"
+            :class="{ active: howRole === 'customer' }"
+            @click="howRole = 'customer'"
+          >
+            Я заказчик
+          </button>
+          <button
+            class="how-toggle-btn"
+            :class="{ active: howRole === 'freelancer' }"
+            @click="howRole = 'freelancer'"
+          >
+            Я фрилансер
+          </button>
+        </div>
+
+        <div class="how-steps">
+          <div
+            v-for="(step, i) in howSteps"
+            :key="i"
+            class="how-step ios-glass ios-glass-heavy"
+          >
+            <div class="how-step-num">{{ i + 1 }}</div>
+            <h4 class="how-step-title">{{ step.title }}</h4>
+            <p class="how-step-desc">{{ step.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- Плюсы фриланса -->
     <section class="benefits">
@@ -143,6 +177,26 @@ const benefits = [
   { id: 2, title: 'Быстрые выплаты', description: 'Деньги поступают на баланс в день приёмки работы по проекту.' },
   { id: 3, title: 'Безопасные сделки', description: 'Бюджет резервируется через безопасную сделку, поэтому защищены и заказчик, и исполнитель.' }
 ]
+
+// Блок «Как это работает»
+const howRole = ref('customer')
+
+const howStepsData = {
+  customer: [
+    { title: 'Создайте проект', description: 'Опишите задачу, укажите бюджет и срок выполнения.' },
+    { title: 'Выберите исполнителя', description: 'Получайте отклики фрилансеров и выбирайте лучшего по рейтингу.' },
+    { title: 'Безопасная сделка', description: 'Бюджет резервируется на вашем балансе и хранится до приёмки работы.' },
+    { title: 'Примите и оплатите', description: 'Средства уходят исполнителю, комиссия сервиса — всего до 5%.' }
+  ],
+  freelancer: [
+    { title: 'Найдите заказ', description: 'Просматривайте проекты в каталоге и фильтруйте по категориям.' },
+    { title: 'Откликнитесь', description: 'Отправьте заявку заказчику и обсудите детали в чате.' },
+    { title: 'Выполните работу', description: 'Сделайте задачу в срок и сдайте результат через платформу.' },
+    { title: 'Получите оплату', description: 'Деньги поступают на ваш баланс в день приёмки работы.' }
+  ]
+}
+
+const howSteps = computed(() => howStepsData[howRole.value])
 
 // Текст кнопки в зависимости от авторизации
 const startButtonText = computed(() => {
@@ -422,9 +476,11 @@ onMounted(() => {
 .place-1 .podium-name { font-size: 1.35rem; }
 
 .podium-rating .stars {
-  color: #FFD27D;
+  color: var(--rating);
   font-size: 1rem;
   margin-right: 6px;
+  text-shadow: 0 0 8px var(--rating-glow);
+  -webkit-text-fill-color: var(--rating);
 }
 
 .podium-rating .rating-value {
