@@ -72,15 +72,25 @@ class ProfileController extends Controller
                 'full_name' => 'sometimes|string|max:255',
                 'phone' => ['sometimes', 'nullable', 'string', 'regex:/^(\+7|8)\d{10}$/'],
                 'avatar' => 'nullable|string|max:255',
-                'password' => 'sometimes|string|min:6|confirmed'
+                'telegram' => 'sometimes|nullable|string|max:255',
+                'github' => 'sometimes|nullable|string|max:255|url',
+                'portfolio_url' => 'sometimes|nullable|string|max:255|url',
+                'website' => 'sometimes|nullable|string|max:255|url',
+                'password' => 'nullable|string|min:6|confirmed'
             ], [
                 'phone.regex' => 'Телефон должен быть в формате +7XXXXXXXXXX или 8XXXXXXXXXX (11 цифр)',
+                'github.url' => 'Ссылка на GitHub должна быть корректным URL (https://…)',
+                'portfolio_url.url' => 'Ссылка на портфолио должна быть корректным URL (https://…)',
+                'website.url' => 'Ссылка на сайт должна быть корректным URL (https://…)',
             ]);
             
-            if (isset($validated['password'])) {
+            // Пароль необязателен: меняем только если передан непустой
+            if (!empty($validated['password'])) {
                 $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']);
             }
-            
+
             $user->update($validated);
             
             return response()->json([

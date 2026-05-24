@@ -73,7 +73,7 @@
           <button 
             class="tab-button" 
             :class="{ active: activeTab === 'edit' }"
-            @click="activeTab = 'edit'"
+            @click="goToEdit"
           >
             Редактировать
           </button>
@@ -111,6 +111,19 @@
                 <span class="info-label">Дата регистрации:</span>
                 <span class="info-value">{{ formatDate(user.created_at) }}</span>
               </div>
+            </div>
+          </div>
+
+          <div
+            v-if="isFreelancer && (user.telegram || user.github || user.portfolio_url || user.website)"
+            class="info-section"
+          >
+            <h3>Контакты и ссылки</h3>
+            <div class="links-list">
+              <a v-if="user.telegram" :href="telegramHref(user.telegram)" target="_blank" rel="noopener noreferrer" class="profile-link">Telegram</a>
+              <a v-if="user.github" :href="user.github" target="_blank" rel="noopener noreferrer" class="profile-link">GitHub</a>
+              <a v-if="user.portfolio_url" :href="user.portfolio_url" target="_blank" rel="noopener noreferrer" class="profile-link">Портфолио</a>
+              <a v-if="user.website" :href="user.website" target="_blank" rel="noopener noreferrer" class="profile-link">Сайт</a>
             </div>
           </div>
 
@@ -167,6 +180,50 @@
               />
             </div>
             
+            <template v-if="isFreelancer">
+              <div class="form-section-title">Контакты и ссылки</div>
+
+              <div class="form-group">
+                <label>Telegram</label>
+                <input
+                  v-model="editForm.telegram"
+                  type="text"
+                  class="form-input ios-glass"
+                  placeholder="@username или https://t.me/username"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>GitHub</label>
+                <input
+                  v-model="editForm.github"
+                  type="url"
+                  class="form-input ios-glass"
+                  placeholder="https://github.com/username"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Портфолио</label>
+                <input
+                  v-model="editForm.portfolio_url"
+                  type="url"
+                  class="form-input ios-glass"
+                  placeholder="https://..."
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Сайт / другая соцсеть</label>
+                <input
+                  v-model="editForm.website"
+                  type="url"
+                  class="form-input ios-glass"
+                  placeholder="https://..."
+                />
+              </div>
+            </template>
+
             <div class="form-group">
               <label>Фото профиля</label>
               <input
@@ -407,6 +464,10 @@ export default {
         full_name: '',
         phone: '',
         avatar: '',
+        telegram: '',
+        github: '',
+        portfolio_url: '',
+        website: '',
         password: '',
         password_confirmation: ''
       },
@@ -437,6 +498,11 @@ export default {
   },
   
   computed: {
+    isFreelancer() {
+      const role = this.user?.role
+      return role === 'freelancer' || role === 'фрилансер'
+    },
+
     totalSent() {
       return this.sentPayments.reduce((sum, p) => sum + p.amount, 0)
     },
@@ -560,6 +626,13 @@ export default {
         
         
         let data1 = await response.json()
+
+        // Сразу подгружаем данные пользователя в форму (даже если запрос платежей не удастся)
+        if (data1 && data1.user) {
+          this.user = data1.user
+          this.populateEditForm()
+        }
+
         response = await fetch(`${this.apiBaseUrl}/api/profil/${data1.user.id}`, {
           headers: {
             'Accept': 'application/json',
@@ -573,14 +646,8 @@ export default {
           this.sentPayments = data2.sent_payments || []
           this.receivedPayments = data2.received_payments || []
           await this.fetchMyApplications()
-          
-          this.editForm = {
-            full_name: this.user.full_name || '',
-            phone: this.user.phone || '',
-            avatar: this.user.avatar || '',
-            password: '',
-            password_confirmation: ''
-          }
+
+          this.populateEditForm()
         } else {
           localStorage.removeItem('token')
           this.$router.push('/login')
@@ -661,7 +728,20 @@ export default {
       }
       
       const token = localStorage.getItem('token')
-      
+
+      // Пустые ссылки/контакты отправляем как null, чтобы не падала проверка URL
+      const emptyToNull = (v) => {
+        const s = String(v ?? '').trim()
+        return s === '' ? null : s
+      }
+      const payload = {
+        ...this.editForm,
+        telegram: emptyToNull(this.editForm.telegram),
+        github: emptyToNull(this.editForm.github),
+        portfolio_url: emptyToNull(this.editForm.portfolio_url),
+        website: emptyToNull(this.editForm.website)
+      }
+
       try {
         const response = await fetch(`${this.apiBaseUrl}/api/profile/update`, {
           method: 'POST',
@@ -670,7 +750,7 @@ export default {
             'Accept': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(this.editForm)
+          body: JSON.stringify(payload)
         })
         
         const data = await response.json()
@@ -817,6 +897,35 @@ export default {
         'заказчик': 'Заказчик'
       }
       return roles[role] || role
+    },
+
+    telegramHref(value) {
+      const v = String(value || '').trim()
+      if (!v) return '#'
+      if (/^https?:\/\//i.test(v)) return v
+      return 'https://t.me/' + v.replace(/^@/, '')
+    },
+
+    // Заполняет форму редактирования текущими данными пользователя
+    populateEditForm() {
+      const u = this.user || {}
+      this.editForm = {
+        full_name: u.full_name || '',
+        phone: u.phone || '',
+        avatar: u.avatar || '',
+        telegram: u.telegram || '',
+        github: u.github || '',
+        portfolio_url: u.portfolio_url || '',
+        website: u.website || '',
+        password: '',
+        password_confirmation: ''
+      }
+    },
+
+    // Переход на вкладку редактирования с актуальными данными
+    goToEdit() {
+      this.populateEditForm()
+      this.activeTab = 'edit'
     },
     
     getPaymentStatus(status) {
@@ -1169,6 +1278,40 @@ export default {
 .edit-form {
   max-width: 600px;
   margin: 0 auto;
+}
+
+.form-section-title {
+  margin: 8px 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #A8D1FF;
+  border-top: 1px solid rgba(168, 209, 255, 0.15);
+  padding-top: 16px;
+}
+
+.links-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: rgba(10, 77, 140, 0.3);
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  color: #FFFFFF;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.25s ease;
+}
+
+.profile-link:hover {
+  background: rgba(10, 77, 140, 0.5);
+  border-color: rgba(168, 209, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 .form-group {

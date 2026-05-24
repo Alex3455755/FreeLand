@@ -128,11 +128,19 @@
                 </div>
                 <div class="contact-item" v-if="user.telegram">
                   <span class="contact-label">Telegram:</span>
-                  <a :href="'https://t.me/' + user.telegram" target="_blank" class="contact-value">@{{ user.telegram }}</a>
+                  <a :href="telegramHref(user.telegram)" target="_blank" rel="noopener noreferrer" class="contact-value">{{ telegramHandle(user.telegram) }}</a>
                 </div>
                 <div class="contact-item" v-if="user.github">
                   <span class="contact-label">GitHub:</span>
-                  <a :href="user.github" target="_blank" class="contact-value">{{ user.github }}</a>
+                  <a :href="user.github" target="_blank" rel="noopener noreferrer" class="contact-value">{{ user.github }}</a>
+                </div>
+                <div class="contact-item" v-if="user.portfolio_url">
+                  <span class="contact-label">Портфолио:</span>
+                  <a :href="user.portfolio_url" target="_blank" rel="noopener noreferrer" class="contact-value">{{ user.portfolio_url }}</a>
+                </div>
+                <div class="contact-item" v-if="user.website">
+                  <span class="contact-label">Сайт:</span>
+                  <a :href="user.website" target="_blank" rel="noopener noreferrer" class="contact-value">{{ user.website }}</a>
                 </div>
               </div>
             </div>
@@ -813,6 +821,22 @@ export default {
         3: 'Администратор'
       };
       return roleMap[role] || role || 'Пользователь';
+    },
+
+    telegramHref(value) {
+      const v = String(value || '').trim();
+      if (!v) return '#';
+      if (/^https?:\/\//i.test(v)) return v;
+      return 'https://t.me/' + v.replace(/^@/, '');
+    },
+
+    telegramHandle(value) {
+      const v = String(value || '').trim();
+      if (/^https?:\/\//i.test(v)) {
+        const parts = v.replace(/\/+$/, '').split('/');
+        return '@' + parts[parts.length - 1];
+      }
+      return '@' + v.replace(/^@/, '');
     },
     
     formatPrice(price) {
