@@ -466,6 +466,77 @@
           </template>
         </div>
 
+        <!-- Жалобы -->
+        <div v-if="activeTab === 'complaints'" class="admin-section">
+          <div class="section-header">
+            <h2 class="section-title">Жалобы на заказчиков</h2>
+          </div>
+
+          <div v-if="complaintsLoading" class="loading-state">
+            <div class="loader ios-glass">
+              <div class="loader-spinner"></div>
+              <p>Загрузка жалоб…</p>
+            </div>
+          </div>
+
+          <div v-else-if="complaints.length === 0" class="empty-state ios-glass">
+            <p class="empty-text">Жалоб пока нет</p>
+          </div>
+
+          <div v-else class="complaints-list">
+            <div
+              v-for="complaint in complaints"
+              :key="complaint.id"
+              class="complaint-card ios-glass"
+            >
+              <div class="complaint-card-head">
+                <span class="complaint-status" :class="complaint.status">
+                  {{ complaintStatusLabel(complaint.status) }}
+                </span>
+                <span class="complaint-date">{{ formatDate(complaint.created_at) }}</span>
+              </div>
+
+              <div class="complaint-meta">
+                <div class="complaint-meta-item">
+                  <span class="complaint-meta-label">Проект:</span>
+                  <span>{{ complaint.project?.title || ('#' + complaint.project_id) }}</span>
+                </div>
+                <div class="complaint-meta-item">
+                  <span class="complaint-meta-label">Жалуется (исполнитель):</span>
+                  <span>{{ complaint.freelancer?.full_name || complaint.freelancer?.login || ('ID ' + complaint.freelancer_id) }}</span>
+                </div>
+                <div class="complaint-meta-item">
+                  <span class="complaint-meta-label">На заказчика:</span>
+                  <span>{{ complaint.customer?.full_name || complaint.customer?.login || ('ID ' + complaint.customer_id) }}</span>
+                </div>
+              </div>
+
+              <p class="complaint-text">{{ complaint.text }}</p>
+
+              <div v-if="complaint.status === 'pending'" class="complaint-actions">
+                <button
+                  class="save-button"
+                  :disabled="complaintActionId === complaint.id"
+                  @click="acceptComplaint(complaint)"
+                >
+                  {{ complaintActionId === complaint.id ? 'Обработка…' : 'Принять и создать чат' }}
+                </button>
+                <button
+                  class="cancel-button"
+                  :disabled="complaintActionId === complaint.id"
+                  @click="rejectComplaint(complaint)"
+                >
+                  Отклонить
+                </button>
+              </div>
+              <p v-else-if="complaint.status === 'accepted'" class="complaint-result accepted">
+                Принята — создан чат с исполнителем
+              </p>
+              <p v-else class="complaint-result rejected">Отклонена</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Комиссии -->
         <div v-if="activeTab === 'settings'" class="admin-section">
           <div class="section-header">
@@ -723,8 +794,13 @@ export default {
         { value: 'comments', label: 'Комментарии', icon: '' },
         { value: 'payments', label: 'Платежи', icon: '' },
         { value: 'statistics', label: 'Статистика', icon: '' },
+        { value: 'complaints', label: 'Жалобы', icon: '' },
         { value: 'settings', label: 'Комиссии', icon: '' }
       ],
+
+      complaints: [],
+      complaintsLoading: false,
+      complaintActionId: null,
 
       adminUserId: null,
       stats: null,
@@ -938,7 +1014,8 @@ export default {
           this.fetchCategories(),
           this.fetchCategoryRequests(),
           this.fetchComments(),
-          this.fetchPayments()
+          this.fetchPayments(),
+          this.fetchComplaints()
         ]);
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -948,6 +1025,93 @@ export default {
       }
     },
     
+    complaintStatusLabel(status) {
+      const map = {
+        pending: 'На рассмотрении',
+        accepted: 'Принята',
+        rejected: 'Отклонена'
+      };
+      return map[status] || status;
+    },
+
+    async fetchComplaints() {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        this.complaints = []
+        return
+      }
+      this.complaintsLoading = true
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/complaints`, {
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (response.ok && data.success) {
+          this.complaints = data.complaints || []
+        } else {
+          this.complaints = []
+        }
+      } catch (e) {
+        console.error('fetchComplaints', e)
+        this.complaints = []
+      } finally {
+        this.complaintsLoading = false
+      }
+    },
+
+    async acceptComplaint(complaint) {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      this.complaintActionId = complaint.id
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/complaints/${complaint.id}/accept`, {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Не удалось принять жалобу')
+        }
+        this.showNotification(data.message || 'Жалоба принята, чат создан', 'success')
+        await this.fetchComplaints()
+      } catch (e) {
+        this.showNotification(e.message || 'Ошибка', 'error')
+      } finally {
+        this.complaintActionId = null
+      }
+    },
+
+    async rejectComplaint(complaint) {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      this.complaintActionId = complaint.id
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/admin/complaints/${complaint.id}/reject`, {
+          method: 'PATCH',
+          headers: {
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          }
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Не удалось отклонить жалобу')
+        }
+        this.showNotification(data.message || 'Жалоба отклонена', 'success')
+        await this.fetchComplaints()
+      } catch (e) {
+        this.showNotification(e.message || 'Ошибка', 'error')
+      } finally {
+        this.complaintActionId = null
+      }
+    },
+
     async fetchUsers() {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -1810,6 +1974,103 @@ export default {
   padding: 10px 0;
 }
 
+/* ===== Жалобы ===== */
+.complaints-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.complaint-card {
+  padding: 22px 24px;
+}
+
+.complaint-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.complaint-status {
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: rgba(241, 196, 15, 0.2);
+  color: #f1c40f;
+  border: 1px solid rgba(241, 196, 15, 0.4);
+}
+
+.complaint-status.accepted {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border-color: rgba(46, 204, 113, 0.4);
+}
+
+.complaint-status.rejected {
+  background: rgba(231, 76, 60, 0.2);
+  color: #ff8f80;
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+.complaint-date {
+  color: #A8D1FF;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.complaint-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.complaint-meta-item {
+  color: #FFFFFF;
+  font-size: 0.95rem;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.complaint-meta-label {
+  color: #A8D1FF;
+}
+
+.complaint-text {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(10, 77, 140, 0.25);
+  border: 1px solid rgba(168, 209, 255, 0.15);
+  color: #F0F8FF;
+  line-height: 1.5;
+}
+
+.complaint-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.complaint-result {
+  margin: 0;
+  font-weight: 600;
+}
+
+.complaint-result.accepted {
+  color: #2ecc71;
+}
+
+.complaint-result.rejected {
+  color: #ff8f80;
+}
+
 /* Переключатель периода */
 .period-switch {
   display: inline-flex;
@@ -2613,7 +2874,9 @@ select.form-input option {
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: rgba(10, 77, 140, 0.3);
 }
 
@@ -2627,6 +2890,7 @@ select.form-input option {
   align-items: center;
   padding: 20px 30px;
   border-bottom: 1px solid rgba(168, 209, 255, 0.1);
+  flex-shrink: 0;
 }
 
 .modal-title {
@@ -2658,6 +2922,9 @@ select.form-input option {
 
 .modal-body {
   padding: 30px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* Формы */

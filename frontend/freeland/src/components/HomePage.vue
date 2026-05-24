@@ -113,7 +113,8 @@
             :key="i"
             class="how-step ios-glass ios-glass-heavy"
           >
-            <div class="how-step-num">{{ i + 1 }}</div>
+            <span class="how-step-num">{{ i + 1 }}</span>
+            <div class="how-step-illustration" v-html="howIcons[step.icon]"></div>
             <h4 class="how-step-title">{{ step.title }}</h4>
             <p class="how-step-desc">{{ step.description }}</p>
           </div>
@@ -183,17 +184,28 @@ const howRole = ref('customer')
 
 const howStepsData = {
   customer: [
-    { title: 'Создайте проект', description: 'Опишите задачу, укажите бюджет и срок выполнения.' },
-    { title: 'Выберите исполнителя', description: 'Получайте отклики фрилансеров и выбирайте лучшего по рейтингу.' },
-    { title: 'Безопасная сделка', description: 'Бюджет резервируется на вашем балансе и хранится до приёмки работы.' },
-    { title: 'Примите и оплатите', description: 'Средства уходят исполнителю, комиссия сервиса — всего до 5%.' }
+    { icon: 'create', title: 'Создайте проект', description: 'Опишите задачу, укажите бюджет и срок выполнения.' },
+    { icon: 'choose', title: 'Выберите исполнителя', description: 'Получайте отклики фрилансеров и выбирайте лучшего по рейтингу.' },
+    { icon: 'shield', title: 'Безопасная сделка', description: 'Бюджет резервируется на вашем балансе и хранится до приёмки работы.' },
+    { icon: 'wallet', title: 'Примите и оплатите', description: 'Средства уходят исполнителю, комиссия сервиса — всего до 5%.' }
   ],
   freelancer: [
-    { title: 'Найдите заказ', description: 'Просматривайте проекты в каталоге и фильтруйте по категориям.' },
-    { title: 'Откликнитесь', description: 'Отправьте заявку заказчику и обсудите детали в чате.' },
-    { title: 'Выполните работу', description: 'Сделайте задачу в срок и сдайте результат через платформу.' },
-    { title: 'Получите оплату', description: 'Деньги поступают на ваш баланс в день приёмки работы.' }
+    { icon: 'search', title: 'Найдите заказ', description: 'Просматривайте проекты в каталоге и фильтруйте по категориям.' },
+    { icon: 'send', title: 'Откликнитесь', description: 'Отправьте заявку заказчику и обсудите детали в чате.' },
+    { icon: 'work', title: 'Выполните работу', description: 'Сделайте задачу в срок и сдайте результат через платформу.' },
+    { icon: 'wallet', title: 'Получите оплату', description: 'Деньги поступают на ваш баланс в день приёмки работы.' }
   ]
+}
+
+// Inline SVG-иллюстрации для шагов (в синей гамме сайта)
+const howIcons = {
+  create: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 12v5M9.5 14.5h5"/></svg>',
+  choose: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>',
+  work: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>'
 }
 
 const howSteps = computed(() => howStepsData[howRole.value])
@@ -381,6 +393,120 @@ onMounted(() => {
 /* Небольшой отступ вниз для подзаголовка секции преимуществ */
 .benefits .section-subtitle {
   margin-bottom: 40px;
+}
+
+/* ===== Как это работает ===== */
+.how-it-works {
+  padding: 40px 0;
+}
+
+.how-toggle {
+  display: inline-flex;
+  gap: 6px;
+  padding: 6px;
+  margin: 28px auto 40px;
+  border-radius: 9999px;
+}
+
+.how-it-works .container {
+  text-align: center;
+}
+
+.how-toggle-btn {
+  padding: 10px 28px;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.how-toggle-btn.active {
+  background: linear-gradient(135deg, var(--blue-dark), var(--blue-medium));
+  color: #FFFFFF;
+  box-shadow: 0 6px 18px rgba(8, 51, 88, 0.4);
+}
+
+.how-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 22px;
+  text-align: left;
+}
+
+.how-step {
+  position: relative;
+  padding: 30px 26px;
+  border-radius: 24px;
+  transition: transform 0.3s ease;
+}
+
+.how-step:hover {
+  transform: translateY(-6px);
+}
+
+.how-step-num {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  font-size: 2.4rem;
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(168, 209, 255, 0.18);
+}
+
+.how-step-illustration {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(42, 127, 201, 0.35), rgba(58, 148, 223, 0.18));
+  border: 1px solid rgba(168, 209, 255, 0.3);
+  box-shadow: 0 6px 18px rgba(8, 51, 88, 0.35);
+  margin-bottom: 18px;
+}
+
+.how-step-illustration :deep(svg) {
+  width: 32px;
+  height: 32px;
+  color: var(--blue-very-pale);
+  filter: drop-shadow(0 0 6px var(--rating-glow));
+}
+
+.how-step-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 10px;
+}
+
+.how-step-desc {
+  color: var(--text-secondary);
+  opacity: 0.85;
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 900px) {
+  .how-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .how-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .how-toggle-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+  }
 }
 
 /* ===== Пьедестал лучших фрилансеров ===== */

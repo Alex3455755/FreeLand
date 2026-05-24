@@ -20,6 +20,7 @@ use App\Http\Controllers\CategoryRequestController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\UserAgreementController;
+use App\Http\Controllers\ComplaintController;
 
 
 
@@ -141,6 +142,11 @@ Route::middleware(['auth:sanctum', 'not_banned', 'admin'])->group(function () {
     Route::get('/admin/category-requests/pending', [CategoryRequestController::class, 'pending']);
     Route::patch('/admin/category-requests/{categoryRequest}/approve', [CategoryRequestController::class, 'approve']);
     Route::patch('/admin/category-requests/{categoryRequest}/reject', [CategoryRequestController::class, 'reject']);
+
+    // жалобы фрилансеров на заказчиков
+    Route::get('/admin/complaints', [ComplaintController::class, 'index']);
+    Route::patch('/admin/complaints/{complaint}/accept', [ComplaintController::class, 'accept']);
+    Route::patch('/admin/complaints/{complaint}/reject', [ComplaintController::class, 'reject']);
 });
 
 Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
@@ -183,4 +189,7 @@ Route::middleware(['auth:sanctum', 'not_banned'])->group(function () {
 
     // заявка на добавление новой категории (от пользователя)
     Route::post('/category-requests', [CategoryRequestController::class, 'store']);
+
+    // жалоба фрилансера на заказчика
+    Route::post('/complaints', [ComplaintController::class, 'store']);
 });

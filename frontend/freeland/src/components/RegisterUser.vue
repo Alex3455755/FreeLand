@@ -6,6 +6,7 @@
       keywords="регистрация, создать аккаунт, фриланс, FreeLand"
     />
     <div class="modal-content register-card ios-glass ios-glass-heavy">
+      <div class="register-scroll">
 
       <h2 class="form-title">Регистрация</h2>
       <p class="form-subtitle">Создайте аккаунт на FreeLand</p>
@@ -100,6 +101,7 @@
         {{ message }}
       </div>
 
+      </div>
     </div>
   </div>
 </template>
@@ -317,17 +319,27 @@ const resendCode = async () => {
   width: 90%;
   max-width: 520px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .register-card {
-  padding: 50px 40px;
+  padding: 40px 30px;
   border-radius: 32px;
   text-align: center;
   background: rgba(10, 77, 140, 0.15);
   backdrop-filter: blur(25px) saturate(180%);
   border: 1px solid rgba(168, 209, 255, 0.2);
   box-shadow: 0 20px 40px rgba(8, 51, 88, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.register-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 10px;
+  margin: 0 -10px;
 }
 
 .form-title {

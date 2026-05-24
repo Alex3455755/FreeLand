@@ -416,6 +416,14 @@
                 </button>
 
                 <button
+                  v-if="isFreelancer && getProjectFreelancerId(project) === user.id"
+                  @click="openComplaint(project)"
+                  class="action-button complaint-button"
+                >
+                  Пожаловаться
+                </button>
+
+                <button
                   @click="viewProject(project.id)"
                   class="action-button view-button"
                 >
@@ -539,6 +547,52 @@
       </div>
     </div>
 
+    <!-- Модалка жалобы на заказчика -->
+    <div
+      v-if="showComplaintModal && complaintProject"
+      class="modal-overlay"
+      @click.self="closeComplaint"
+    >
+      <div class="modal-content ios-glass">
+        <div class="modal-header">
+          <h3 class="modal-title">Пожаловаться на заказчика</h3>
+          <button type="button" class="modal-close" @click="closeComplaint">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <form @submit.prevent="submitComplaint">
+            <p class="complaint-project">
+              Проект: <strong>{{ complaintProject.title }}</strong>
+            </p>
+
+            <div class="form-group">
+              <label>Опишите проблему</label>
+              <textarea
+                v-model="complaintText"
+                class="form-input ios-glass"
+                rows="5"
+                placeholder="Что произошло с заказчиком по этому проекту..."
+                required
+              ></textarea>
+            </div>
+
+            <p class="edit-hint">
+              Жалоба будет отправлена администрации. Если её примут, с вами свяжется администратор в чате.
+            </p>
+
+            <div class="modal-actions">
+              <button type="button" class="cancel-button" @click="closeComplaint">
+                Отмена
+              </button>
+              <button type="submit" class="save-button" :disabled="complaintSubmitting">
+                {{ complaintSubmitting ? 'Отправка…' : 'Отправить жалобу' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <FooterApp />
   </div>
 </template>
@@ -580,6 +634,11 @@ export default {
 
       editingProject: null,
       projectUpdating: false,
+
+      showComplaintModal: false,
+      complaintProject: null,
+      complaintText: '',
+      complaintSubmitting: false,
 
       apiBaseUrl: '',
 
@@ -849,6 +908,65 @@ export default {
       this.editingProject = null
       this.projectUpdating = false
       document.body.style.overflow = ''
+    },
+
+    openComplaint(project) {
+      this.complaintProject = project
+      this.complaintText = ''
+      this.showComplaintModal = true
+      document.body.style.overflow = 'hidden'
+    },
+
+    closeComplaint() {
+      this.showComplaintModal = false
+      this.complaintProject = null
+      this.complaintText = ''
+      this.complaintSubmitting = false
+      document.body.style.overflow = ''
+    },
+
+    async submitComplaint() {
+      const token = localStorage.getItem('token')
+      if (!token || !this.complaintProject) {
+        this.goToLogin()
+        return
+      }
+
+      const text = String(this.complaintText || '').trim()
+      if (text.length < 5) {
+        alert('Опишите суть жалобы подробнее (минимум 5 символов)')
+        return
+      }
+
+      this.complaintSubmitting = true
+
+      try {
+        const response = await fetch(`${this.apiBaseUrl}/api/complaints`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            project_id: this.complaintProject.id,
+            text
+          })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Не удалось отправить жалобу')
+        }
+
+        alert(data.message || 'Жалоба отправлена администрации')
+        this.closeComplaint()
+      } catch (error) {
+        alert(error.message || 'Ошибка отправки жалобы')
+      } finally {
+        this.complaintSubmitting = false
+      }
     },
 
     async saveProjectEdit() {
@@ -2240,9 +2358,21 @@ export default {
   width: 90%;
   max-width: 600px;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background: rgba(10, 77, 140, 0.3);
   animation: modalFadeIn 0.3s ease;
+}
+
+.modal-header {
+  flex-shrink: 0;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .modal-header {
@@ -2332,6 +2462,27 @@ textarea.form-input {
   color: #d9ecff;
   font-size: 0.88rem;
   line-height: 1.45;
+}
+
+.action-button.complaint-button {
+  background: rgba(230, 126, 34, 0.2);
+  border: 1px solid rgba(230, 126, 34, 0.4);
+  color: #e67e22;
+}
+
+.action-button.complaint-button:hover {
+  background: rgba(230, 126, 34, 0.35);
+  color: #FFFFFF;
+}
+
+.complaint-project {
+  margin: 0 0 18px;
+  color: #F0F8FF;
+  font-size: 0.95rem;
+}
+
+.complaint-project strong {
+  color: #FFFFFF;
 }
 
 .modal-actions {
