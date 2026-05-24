@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Payment;
+use App\Models\Project;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Schema;
 
 class UserController extends Controller
 {
@@ -46,6 +50,31 @@ class UserController extends Controller
             'message' => 'Пользователь не найден'
         ], 404);
     }
+
+    // Реальная статистика профиля
+    // Количество выполненных (оплаченных) проектов как исполнителя
+    $projectsCompleted = Payment::query()
+        ->where('freelancer_id', $user->id)
+        ->where('type', 'transfer')
+        ->where('status', 'paid')
+        ->whereColumn('customer_id', '!=', 'freelancer_id')
+        ->whereNotNull('project_id')
+        ->distinct('project_id')
+        ->count('project_id');
+
+    // Дополнительно учитываем проекты со статусом "completed"
+    $freelancerColumn = Schema::hasColumn('projects', 'freelancer_id') ? 'freelancer_id' : 'frelancer_id';
+    $completedByStatus = Project::query()
+        ->where($freelancerColumn, $user->id)
+        ->where('status', 'completed')
+        ->count();
+
+    $user->projects_completed = max($projectsCompleted, $completedByStatus);
+
+    // Количество дней на сайте
+    $user->registered_days = $user->created_at
+        ? $user->created_at->startOfDay()->diffInDays(Carbon::now()->startOfDay())
+        : 0;
 
     return response()->json([
         'user' => $user

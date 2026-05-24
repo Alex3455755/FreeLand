@@ -1602,8 +1602,8 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(10px);
+  background: rgba(8, 51, 88, 0.8);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1612,11 +1612,12 @@ export default {
 }
 
 .modal-container {
-  max-width: 500px;
-  width: 100%;
-  max-height: 90vh;
+  max-width: 560px;
+  width: 90%;
+  max-height: 85vh;
   overflow-y: auto;
   padding: 30px;
+  background: rgba(10, 77, 140, 0.3);
   border: 1px solid rgba(168, 209, 255, 0.2);
   animation: modalFadeIn 0.3s ease;
 }
@@ -1625,29 +1626,39 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(168, 209, 255, 0.1);
 }
 
 .modal-title {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: #FFFFFF;
   margin: 0;
 }
 
 .modal-close {
-  font-size: 2.5rem;
-  background: none;
-  border: none;
-  color: rgba(168, 209, 255, 0.5);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(10, 77, 140, 0.2);
+  border: 1px solid rgba(168, 209, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 1.4rem;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.3s ease;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .modal-close:hover {
-  color: #FFFFFF;
-  transform: scale(1.1);
+  background: rgba(231, 76, 60, 0.3);
+  border-color: rgba(231, 76, 60, 0.4);
+  transform: rotate(90deg);
 }
 
 .modal-form {
@@ -1730,9 +1741,7 @@ textarea.form-input {
   display: flex;
   justify-content: flex-end;
   gap: 15px;
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(168, 209, 255, 0.1);
+  margin-top: 28px;
 }
 
 .modal-button {
@@ -1742,17 +1751,17 @@ textarea.form-input {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
+  border: 1px solid rgba(168, 209, 255, 0.3);
 }
 
 .modal-button.cancel {
-  background: rgba(255, 255, 255, 0.1);
-  color: #F0F8FF;
-  border: 1px solid rgba(168, 209, 255, 0.2);
+  background: rgba(149, 165, 166, 0.2);
+  color: #95a5a6;
 }
 
 .modal-button.cancel:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(149, 165, 166, 0.3);
+  transform: translateY(-2px);
 }
 
 .modal-button.submit {
