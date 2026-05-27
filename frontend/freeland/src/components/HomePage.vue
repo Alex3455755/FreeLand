@@ -66,7 +66,7 @@
             <div class="podium-card">
               <div v-if="item.place === 1" class="podium-crown">👑</div>
               <div class="podium-avatar">
-                <img :src="avatarSrc(item, API_URL)" alt="" />
+                <img :src="avatarSrc(item, API_URL)" :alt="'Аватар фрилансера ' + (item.full_name || item.name || item.login)" loading="lazy" />
               </div>
               <h4 class="podium-name">{{ item.full_name || item.name || item.login }}</h4>
               <p class="podium-rating">

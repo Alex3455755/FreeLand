@@ -37,9 +37,10 @@
           <figure class="article-figure">
             <div class="image-container ios-glass">
               <img 
-                src="/img/EasyProject.png" 
+                src="/img/EasyProject.png"
                 alt="Пример легкого проекта фриланс для новичков - правка CSS за 30 минут с бюджетом 1500 рублей"
                 class="article-image"
+                loading="lazy"
                 @error="handleImageError"
               >
             </div>
@@ -92,9 +93,10 @@
           <figure class="article-figure">
             <div class="image-container ios-glass">
               <img 
-                src="/img/diogramm.png" 
+                src="/img/diogramm.png"
                 alt="Статистика распределения легких проектов фриланс по времени выполнения для начинающих"
                 class="article-image"
+                loading="lazy"
                 @error="handleImageError"
               >
             </div>

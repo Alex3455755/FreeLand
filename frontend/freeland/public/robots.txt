@@ -1,0 +1,14 @@
+# robots.txt — FreeLand
+# Разрешаем индексацию публичных разделов и закрываем личные/служебные
+
+User-agent: *
+Allow: /
+
+# Личные кабинеты и служебные разделы — закрыты от индексации
+Disallow: /profile
+Disallow: /my-projects
+Disallow: /my-chats
+Disallow: /admin
+
+# Карта сайта (укажите ваш реальный домен вместо example.com)
+Sitemap: https://freeland.example.com/sitemap.xml

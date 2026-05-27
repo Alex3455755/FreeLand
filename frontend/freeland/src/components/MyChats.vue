@@ -82,7 +82,7 @@
                   rel="noopener noreferrer"
                   class="message-image-wrap"
                 >
-                  <img :src="message.attachment_url" class="message-image" alt="" />
+                  <img :src="message.attachment_url" class="message-image" :alt="message.attachment_name || 'Вложение в сообщении'" loading="lazy" />
                 </a>
               </div>
             </div>

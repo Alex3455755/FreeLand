@@ -189,7 +189,7 @@
           <h3 class="section-title">Портфолио</h3>
           <div class="portfolio-grid">
             <div v-for="item in user.portfolio" :key="item.id" class="portfolio-item">
-              <img v-if="item.image" :src="item.image" :alt="item.title" class="portfolio-image">
+              <img v-if="item.image" :src="item.image" :alt="'Работа из портфолио: ' + item.title" class="portfolio-image" loading="lazy">
               <div class="portfolio-info">
                 <h4 class="portfolio-title">{{ item.title }}</h4>
                 <p class="portfolio-description">{{ item.description }}</p>
@@ -222,7 +222,7 @@
           <div v-else-if="sortedReviews.length > 0" class="reviews-list">
             <div v-for="review in sortedReviews" :key="review.id" class="review-item">
               <div class="review-header">
-                <img class="reviewer-avatar" :src="reviewerAvatar(review)" alt="" />
+                <img class="reviewer-avatar" :src="reviewerAvatar(review)" :alt="'Аватар автора отзыва ' + getAuthorName(review.author_id)" loading="lazy" />
                 <div class="reviewer-info">
                   <div class="reviewer-name">{{ getAuthorName(review.author_id) }}</div>
                   <div class="review-date">{{ formatDate(review.created_at) }}</div>

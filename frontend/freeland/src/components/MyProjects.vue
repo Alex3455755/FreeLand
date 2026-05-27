@@ -179,7 +179,8 @@
                   <div class="partner-avatar">
                     <img
                       :src="userAvatar(application.user)"
-                      alt=""
+                      :alt="'Аватар ' + (application.user?.full_name || application.user?.login || 'фрилансера')"
+                      loading="lazy"
                     >
                   </div>
 
@@ -287,7 +288,8 @@
                     <div class="partner-avatar">
                       <img
                         :src="userAvatar(project.freelancer)"
-                        alt=""
+                        :alt="'Аватар исполнителя ' + (project.freelancer?.full_name || project.freelancer?.login || '')"
+                        loading="lazy"
                       >
                     </div>
 
@@ -320,7 +322,8 @@
                     <div class="partner-avatar">
                       <img
                         :src="userAvatar(project.customer)"
-                        alt=""
+                        :alt="'Аватар заказчика ' + (project.customer?.full_name || project.customer?.login || '')"
+                        loading="lazy"
                       >
                     </div>
 

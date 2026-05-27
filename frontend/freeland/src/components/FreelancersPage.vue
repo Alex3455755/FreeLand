@@ -91,7 +91,7 @@
             <div class="avatar-container">
               <div class="avatar-ring"></div>
               <div class="avatar">
-                <img :src="userAvatar(freelancer)" :alt="freelancer.full_name || freelancer.login || ''" />
+                <img :src="userAvatar(freelancer)" :alt="'Аватар фрилансера ' + (freelancer.full_name || freelancer.login || '')" loading="lazy" />
               </div>
               <div class="rating-badge" v-if="freelancer.rating">
                 {{ freelancer.rating }} ★
